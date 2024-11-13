@@ -20,5 +20,5 @@
     "app/Layout.jsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
-  ]
+, "app/service/service.ts"  ]
 }
