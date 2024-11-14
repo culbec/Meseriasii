@@ -68,7 +68,7 @@ const HomePage = () => {
     fetchMeseriasiWithOffers();
   }, []); 
 
-  const truncateText = (text, maxLength = 70) => {
+  const truncateText = (text, maxLength = 150) => {
     if (text.length > maxLength) {
       return text.slice(0, maxLength) + "...";
     }
@@ -76,196 +76,235 @@ const HomePage = () => {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.logo}>Meseriasii</Text>
-        {/* Profile picture button */}
-        <TouchableOpacity 
-          style={styles.profilePicture}
-          onPress={() => navigation.navigate('Login')}  // Navigate to Login screen
+<ScrollView style={styles.container}>
+  
+  {/* Header Section */}
+  <View style={styles.header}>
+    <Text style={styles.logo}>Meseriasii</Text>
+    <TouchableOpacity 
+      style={styles.profilePicture} 
+      onPress={() => navigation.navigate('Login')}
+    >
+      <Text style={styles.profileText}>P</Text>
+    </TouchableOpacity>
+  </View>
+  
+  {/* Search Section */}
+  <View style={styles.searchSection}>
+    <Text style={styles.slogan}>Profesionisti la un click distanta</Text>
+    <TextInput style={styles.searchBar} placeholder="Search..." />
+  </View>
+  
+  {/* Category Bar */}
+  <ScrollView horizontal style={styles.categorySection} showsHorizontalScrollIndicator={false}>
+    {categories.map((category) => (
+      <View key={category.id} style={styles.category}>
+        <Text style={styles.categoryText}>{category.Name}</Text>
+      </View>
+    ))}
+    <TouchableOpacity style={styles.scrollButton}>
+      <Text style={styles.scrollButtonText}>→</Text>
+    </TouchableOpacity>
+  </ScrollView>
+  
+  {/* Offers Section */}
+  <View style={styles.offersMeseriasi}>
+    <Text style={styles.sectionTitle}>Oferte:</Text>
+    {meseriasi.map((meserias) =>
+      meserias.offers.map((offer, offerIndex) => (
+        <TouchableOpacity
+          key={`${meserias.id}-${offerIndex}`}
+          style={styles.meseriasCard}
+          onPress={() => navigation.navigate('OfferDetailScreen', {
+            meseriasID: meserias.id,
+            offerIndex
+          })}
         >
-          <Text style={styles.profileText}>P</Text>
+          <Text style={styles.meseriasName}>
+            {meserias.user?.[0]?.first_name || 'Unknown Meserias'} {meserias.user?.[0]?.last_name || ''}
+          </Text>
+          <Text style={styles.offerText}>
+            {truncateText(offer.description || 'No description available')}
+          </Text>
+          <Text style={styles.startPrice}>de la {offer.start_price} lei</Text>
         </TouchableOpacity>
-      </View>
+      ))
+    )}
+  </View>
+  
+  {/* Footer Section */}
+<View style={styles.footer}>
+  <Text style={styles.footerLogo}>Meseriasii</Text>
+  <View style={styles.contactInfo}>
+    <View style={styles.contactItem}>
+      <Text style={styles.contactLabel}>Email:</Text>
+      <Text style={styles.contactText}>nasii.meseriasii@gmail.com</Text>
+    </View>
+    <View style={styles.contactItem}>
+      <Text style={styles.contactLabel}>Phone:</Text>
+      <Text style={styles.contactText}>+07 n am cartela</Text>
+    </View>
+  </View>
+  <Text style={styles.footerCopy}>&copy; 2024 Meseriasii. All rights reserved.</Text>
+</View>
+  
+</ScrollView>
 
-      {/* Search Section */}
-      <View style={styles.searchSection}>
-        <Text style={styles.slogan}>Slogan...ceva emotionant</Text>
-        <TextInput style={styles.searchBar} placeholder="Search..." />
-      </View>
-
-      {/* Category Bar */}
-      <View style={styles.categorySection}>
-        {/* Category Bar */}
-        <ScrollView horizontal style={styles.categoryBar} showsHorizontalScrollIndicator={false}>
-          {categories.map((category) => (
-            <View key={category.id} style={styles.category}>
-              <Text style={styles.categoryText}>{category.Name}</Text>
-            </View>
-          ))}
-          <TouchableOpacity style={styles.scrollButton}>
-            <Text style={styles.scrollButtonText}>→</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </View>
-
-      {/* Offers Meseriasi Section */}
-      <View style={styles.offersMeseriasi}>
-        <Text style={styles.sectionTitle}>Oferte:</Text>
-        {meseriasi.map((meserias, index) =>
-          meserias.offers.map((offer, offerIndex) => (
-            <TouchableOpacity
-              key={`${meserias.id}-${offerIndex}`} // meseriasID -> meserias.id
-              style={styles.meseriasCard}
-              onPress={() =>
-                navigation.navigate('OfferDetailScreen', { 
-                  "meseriasID": meserias.id, 
-                  offerIndex 
-                })
-              }
-            >
-              <Text style={styles.meseriasName}>
-                {meserias.user?.[0]?.first_name || 'Unknown Meserias'} {meserias.user?.[0]?.last_name || ''}
-              </Text>
-              <Text style={styles.offerText}>
-                {truncateText(offer.description || 'No description available')}
-              </Text>
-              <Text style={styles.startPrice}>de la {offer.start_price} lei</Text>
-            </TouchableOpacity>
-          ))
-        )}
-      </View>
-
-      {/* Footer */}
-      <View style={styles.footer}>
-        <View style={styles.contactInfo}>
-          <Text>Email: example@example.com</Text>
-          <Text>Phone: +123456789</Text>
-        </View>
-        <Text style={styles.footerLogo}>Placeholder Logo</Text>
-      </View>
-    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 10,
-    backgroundColor: '#fff',
-    paddingBottom: 100, // Prevents cutting off footer
+    flex: 1,
+    backgroundColor: '#f7f9fc',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
+    padding: 16,
+    backgroundColor: '#4a90e2',
+    borderBottomWidth: 1,
+    borderBottomColor: '#d4d4d4',
+    elevation: 2,
   },
   logo: {
     fontSize: 24,
     fontWeight: 'bold',
+    color: '#ffffff',
   },
   profilePicture: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#ddd',
-    alignItems: 'center',
+    backgroundColor: '#e2e2e2',
     justifyContent: 'center',
+    alignItems: 'center',
   },
   profileText: {
-    fontSize: 18,
-    color: '#777',
+    fontSize: 16,
+    color: '#4a90e2',
   },
   searchSection: {
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  searchBar: {
-    height: 40,
-    width: '80%',
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 15,
+    padding: 16,
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eeeeee',
   },
   slogan: {
-    marginTop: 8,
-    marginBottom: 8,
+    fontSize: 20,          // Mărim fontul pentru a fi mai vizibil
+    fontWeight: 'bold',    // Îngroșăm textul
+    fontStyle: 'italic',
+    color: '#222',         // Întunecăm puțin culoarea pentru contrast mai mare
+    marginBottom: 12,      // Adăugăm mai mult spațiu dedesubt
+    textAlign: 'center',   // Centrăm textul pentru un efect mai plăcut vizual
+  },
+  searchBar: {
+    padding: 12,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
     fontSize: 16,
-    color: '#777',
   },
   categorySection: {
-    height: 140,
-  },
-  categoryBar: {
-    height: 10,
-    flexDirection: 'row',
-    paddingVertical: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    backgroundColor: '#eaf0f9',
   },
   category: {
-    width: 120,
-    height: 120,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: '#f3f3f3',
-    borderRadius: 8,
-    marginRight: 10,
+    marginHorizontal: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#4a90e2',
+    borderRadius: 20,
+  },
+  categoryText: {
+    color: '#ffffff',
+    fontSize: 16,
   },
   scrollButton: {
+    padding: 8,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 10,
+    marginLeft: 8,
   },
   scrollButtonText: {
-    fontSize: 18,
+    fontSize: 16,
+    color: '#4a90e2',
   },
   offersMeseriasi: {
-    marginVertical: 20,
+    padding: 16,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
+    fontSize: 22,
+    fontWeight: '600',
+    color: '#4a90e2',
+    marginBottom: 12,
   },
   meseriasCard: {
-    padding: 15,
-    marginVertical: 10,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#ffffff',
     borderRadius: 8,
-    position: 'relative',
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   meseriasName: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '500',
+    color: '#333333',
   },
   offerText: {
-    marginTop: 5,
-    fontSize: 14,
-    color: '#555',
+    fontSize: 16,
+    color: '#666666',
+    marginVertical: 8,
   },
   startPrice: {
-    position: 'absolute',
-    top: 15,
-    right: 1,
-    fontSize: 12,
-    color: '#555',
+    fontSize: 16,
+    color: '#4a90e2',
   },
   footer: {
-    borderTopColor: '#ddd',
+    paddingVertical: 20,
+    backgroundColor: '#4a90e2',
     borderTopWidth: 1,
-    paddingTop: 10,
+    borderTopColor: '#d4d4d4',
     alignItems: 'center',
-  },
-  contactInfo: {
-    alignItems: 'center',
-    fontSize: 12,
-    color: '#777',
+    justifyContent: 'center',
   },
   footerLogo: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 12,
+  },
+  contactInfo: {
+    marginBottom: 16,
+    width: '80%',
+    alignItems: 'center',
+  },
+  contactItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 4,
+  },
+  contactLabel: {
+    fontSize: 16,
+    color: '#ffffff',
+    fontWeight: '500',
+    marginRight: 8,
+  },
+  contactText: {
+    fontSize: 16,
+    color: '#f0f0f0',
+  },
+  footerCopy: {
     fontSize: 14,
-    color: '#777',
-    marginTop: 10,
+    color: '#cccccc',
+    marginTop: 8,
   },
 });
 
