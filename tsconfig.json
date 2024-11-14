@@ -16,8 +16,9 @@
     ".expo/types/**/*.js",
     "expo-env.d.js",
     "app/Login.jsx",
-    "app/HomePage.jsx",
+    "app/index.jsx",
     "app/Layout.jsx",
+    "app/OfferDetailScreen.jsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
   ]
