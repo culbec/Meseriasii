@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
 const LoginScreen = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
+  const navigation = useNavigation();
+
   const handleLogin = () => {
     // Placeholder action for login
     if (username && password) {
       Alert.alert('Login Successful', `Welcome, ${username}!`);
+        navigation.navigate('index')
     } else {
       Alert.alert('Error', 'Please enter both username and password');
     }
