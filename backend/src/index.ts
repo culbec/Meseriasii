@@ -69,6 +69,7 @@ async function startServer() {
   // Register route
   router.post("/auth/register", async (ctx) => {
     const body = await CoBody.json(ctx);
+    console.log("body", body);
     const { user, password } = body;
 
     // Process username and password so that they are strings
@@ -123,6 +124,7 @@ async function startServer() {
     ctx.status = 200;
     ctx.body = { message: "Logged out" };
   });
+
   log("Setup logout route");
 
   log("Setting up offer route");
@@ -140,6 +142,23 @@ async function startServer() {
     ctx.body = { offers };
   });
   log("Setup get offers route");
+
+  router.get("/categories", async (ctx) => {
+    const categories = await service.getCategories();
+    log("categories", categories);
+
+    if (!categories) {
+      ctx.status = 404;
+      ctx.body = { message: "Could not get categories! Please try again later." };
+      return;
+    }
+
+    ctx.status = 200;
+    ctx.body = { categories };
+  });
+
+
+
 
   app.use(KoaLogger());
   app.use(json());

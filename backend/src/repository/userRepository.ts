@@ -42,6 +42,7 @@ export class UserRepository {
    * @param password The password of the user
    * @returns The user if the login was successful, undefined otherwise
    */
+  
   public async login(
     username: string,
     password: string
@@ -84,6 +85,9 @@ export class UserRepository {
    * @param password The password of the user
    */
   public async register(user: User, password: string): Promise<void> {
+    if (!bcrypt_ts) {
+      bcrypt_ts = await import('bcrypt-ts');
+    }
     const salt = await bcrypt_ts.genSalt(saltLength);
     const hashedPassword = await bcrypt_ts.hash(password, salt);
 

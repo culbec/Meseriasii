@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserRepository = void 0;
 const firestore_1 = require("firebase/firestore");
@@ -33,9 +66,9 @@ class UserRepository {
         const user = userDoc.data();
         user.id = userDoc.id;
         log("user", user);
-        // if (!bcrypt_ts) {
-        //   bcrypt_ts = await import('bcrypt-ts');
-        // }
+        if (!bcrypt_ts) {
+            bcrypt_ts = await Promise.resolve().then(() => __importStar(require('bcrypt-ts')));
+        }
         // retrieve the salt from the password
         // and rehash the password with that salt
         const passwordSalt = bcrypt_ts.getSalt(user.password);
@@ -52,6 +85,9 @@ class UserRepository {
      * @param password The password of the user
      */
     async register(user, password) {
+        if (!bcrypt_ts) {
+            bcrypt_ts = await Promise.resolve().then(() => __importStar(require('bcrypt-ts')));
+        }
         const salt = await bcrypt_ts.genSalt(saltLength);
         const hashedPassword = await bcrypt_ts.hash(password, salt);
         const result = await (0, firestore_1.addDoc)(this.usersCollection, {
