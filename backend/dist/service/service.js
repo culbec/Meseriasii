@@ -79,10 +79,13 @@ class Service {
     checkLoggedIn(token) {
         return this.loggedInUsers.has(token);
     }
-    async getOffers(meserias_id) {
+    async getOffers(meserias_id, categoryName) {
         try {
             if (meserias_id) {
                 return this.meseriasOffersRepo.getMeseriasOffers(meserias_id);
+            }
+            else if (categoryName) {
+                return this.meseriasOffersRepo.getOffersByCategoryName(categoryName);
             }
             else {
                 return this.meseriasOffersRepo.getOffers();
@@ -93,6 +96,18 @@ class Service {
             throw new Error("Couldn't get offers!");
         }
     }
+    // public async getOffers(category_id?: string) {
+    //   try {
+    //     if (category_id) {
+    //       return this.meseriasOffersRepo.getOffersByCategory(category_id);
+    //     } else {
+    //       return this.meseriasOffersRepo.getOffers();
+    //     }
+    //   } catch (error) {
+    //     this.log("Error getting offers", error);
+    //     throw new Error("Couldn't get offers!");
+    //   }
+    // }
     async getUserById(userId) {
         try {
             return await this.userRepo.getUserById(userId);

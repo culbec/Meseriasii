@@ -92,11 +92,16 @@ export default class Service {
     return this.loggedInUsers.has(token);
   }
 
-  public async getOffers(meserias_id?: string) {
+  public async getOffers(meserias_id?: string ,categoryName?:string) {
     try {
       if (meserias_id) {
         return this.meseriasOffersRepo.getMeseriasOffers(meserias_id);
-      } else {
+
+      }
+      else if(categoryName){
+        return this.meseriasOffersRepo.getOffersByCategoryName(categoryName);
+      }
+       else {
         return this.meseriasOffersRepo.getOffers();
       }
     } catch (error) {
@@ -104,6 +109,7 @@ export default class Service {
       throw new Error("Couldn't get offers!");
     }
   }
+
 
   public async getUserById(userId: string) {
     try {

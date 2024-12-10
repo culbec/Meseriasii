@@ -185,6 +185,31 @@ async function startServer() {
     ctx.body = { categories };
   });
 
+  log("Setup get offers by category route");
+
+router.get("/offers/category/:categoryName", async (ctx) => {
+  const { categoryName } = ctx.params; // Extract the category name from the route parameters
+  log(`Fetching offers for category: ${categoryName}`);
+
+  try {
+    const offers = await service.getOffers(undefined,categoryName); // Call the service method
+    log("offers", offers);
+
+    if (!offers || offers.length === 0) {
+      ctx.status = 404;
+      ctx.body = { message: "No offers found for the specified category." };
+      return;
+    }
+
+    ctx.status = 200;
+    ctx.body = { offers };
+  } catch (error) {
+    log("Error fetching offers by category:", error);
+    ctx.status = 500;
+    ctx.body = { message: "Could not fetch offers! Please try again later." };
+  }
+});
+
 
 
 
