@@ -80,13 +80,27 @@ class Service {
         return this.loggedInUsers.has(token);
     }
     async getOffers(meserias_id) {
-        const meseriasiOffers = await this.meseriasOffersRepo.getOffers();
-        if (!meserias_id) {
-            this.log("Getting all offers");
-            return meseriasiOffers;
+        try {
+            if (meserias_id) {
+                return this.meseriasOffersRepo.getMeseriasOffers(meserias_id);
+            }
+            else {
+                return this.meseriasOffersRepo.getOffers();
+            }
         }
-        this.log("Getting offers of meserias with id", meserias_id);
-        return meseriasiOffers.filter((offer) => offer.meserias.id === meserias_id);
+        catch (error) {
+            this.log("Error getting offers", error);
+            throw new Error("Couldn't get offers!");
+        }
+    }
+    async getUserById(userId) {
+        try {
+            return await this.userRepo.getUserById(userId);
+        }
+        catch (error) {
+            this.log("Error getting user", error);
+            throw new Error("Couldn't get user!");
+        }
     }
     async getCategories() {
         return this.categoryRepo.getCategories();
