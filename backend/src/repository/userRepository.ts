@@ -10,7 +10,8 @@ import {
   where,
 } from "firebase/firestore";
 import { db } from "../utils/firebaseConfig";
-import { compare, genSalt, getSalt, hash } from "bcrypt-ts";
+// import { compare, genSalt, getSalt, hash } from "bcrypt-ts";
+let bcrypt_ts: typeof import('bcrypt-ts');
 
 import { getLogger } from "../utils/utils";
 
@@ -43,6 +44,7 @@ export class UserRepository {
    * @param password The password of the user
    * @returns The user if the login was successful, undefined otherwise
    */
+  
   public async login(
     username: string,
     password: string
@@ -62,13 +64,17 @@ export class UserRepository {
     const user = userDoc.data() as UserPrivate;
     user.id = userDoc.id;
 
+
+    if (!bcrypt_ts) {
+      bcrypt_ts = await import('bcrypt-ts');
+    }
     // retrieve the salt from the password
     // and rehash the password with that salt
-    const passwordSalt = getSalt(user.password);
-    const passwordHash = await hash(password, passwordSalt);
+    const passwordSalt = bcrypt_ts.getSalt(user.password);
+    const passwordHash = await bcrypt_ts.hash(password, passwordSalt);
 
     // compare the password hashes
-    const isPasswordValid = await compare(password, passwordHash);
+    const isPasswordValid = await bcrypt_ts.compare(password, passwordHash);
     return isPasswordValid ? user : undefined;
   }
 
@@ -81,8 +87,10 @@ export class UserRepository {
    * @throws Error if the user couldn't be registered
    */
   public async register(user: User, password: string): Promise<void> {
+
     const salt = await genSalt(saltRounds);
     const hashedPassword = await hash(password, salt);
+
 
     user.date = new Date().toUTCString();
     user.version = 1;

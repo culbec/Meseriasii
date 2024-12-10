@@ -10,11 +10,13 @@ var __rest = (this && this.__rest) || function (s, e) {
         }
     return t;
 };
+
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserRepository = void 0;
 const firestore_1 = require("firebase/firestore");
 const firebaseConfig_1 = require("../utils/firebaseConfig");
-const bcrypt_ts_1 = require("bcrypt-ts");
+// import { compare, genSalt, getSalt, hash } from "bcrypt-ts";
+let bcrypt_ts;
 const utils_1 = require("../utils/utils");
 const saltRounds = 10;
 class UserRepository {
@@ -44,10 +46,10 @@ class UserRepository {
         user.id = userDoc.id;
         // retrieve the salt from the password
         // and rehash the password with that salt
-        const passwordSalt = (0, bcrypt_ts_1.getSalt)(user.password);
-        const passwordHash = await (0, bcrypt_ts_1.hash)(password, passwordSalt);
+        const passwordSalt = bcrypt_ts.getSalt(user.password);
+        const passwordHash = await bcrypt_ts.hash(password, passwordSalt);
         // compare the password hashes
-        const isPasswordValid = await (0, bcrypt_ts_1.compare)(password, passwordHash);
+        const isPasswordValid = await bcrypt_ts.compare(password, passwordHash);
         return isPasswordValid ? user : undefined;
     }
     /**
