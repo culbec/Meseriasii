@@ -104,17 +104,42 @@ async function startServer() {
         ctx.body = { message: "Logged out" };
     });
     log("Setup logout route");
-    log("Setting up offer route");
-    router.get("/offers", async (ctx) => {
-        const offers = await service.getOffers();
-        log("offers", offers);
-        if (!offers) {
-            ctx.status = 404;
-            ctx.body = { message: "Could not get offers! Please try again later." };
+    log("Setting up get user by id route");
+    router.get("/users/:id", authMiddleware, async (ctx) => {
+        const id = ctx.params.id;
+        if (typeof id !== "string") {
+            ctx.status = 400;
+            ctx.body = { message: "Invalid request" };
             return;
         }
-        ctx.status = 200;
-        ctx.body = { offers };
+        try {
+            const user = await service.getUserById(id);
+            ctx.status = 200;
+            ctx.body = { user };
+        }
+        catch (error) {
+            log("Error getting user", error);
+            ctx.status = 404;
+            ctx.body = { message: "Could not get user! Please try again later." };
+        }
+    });
+    log("Setting up offer route");
+    router.get("/offers/meserias/:id", authMiddleware, async (ctx) => {
+        const meserias_id = ctx.params.id;
+        if (typeof meserias_id !== "string") {
+            ctx.status = 400;
+            ctx.body = { message: "Invalid request" };
+            return;
+        }
+        try {
+            const offers = await service.getOffers(meserias_id);
+            ctx.status = 200;
+            ctx.body = { offers };
+        }
+        catch (error) {
+            ctx.status = 404;
+            ctx.body = { message: "Could not get offers! Please try again later." };
+        }
     });
     log("Setup get offers route");
     router.get("/categories", async (ctx) => {

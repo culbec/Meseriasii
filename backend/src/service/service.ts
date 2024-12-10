@@ -3,6 +3,7 @@ import { OffersRepository } from "../repository/offersRepository";
 import { CategoryRepository } from "../repository/categoryRepository";
 import { getLogger } from "../utils/utils";
 import AuthManager from "../auth/authManager";
+import { error } from "console";
 
 export default class Service {
   private userRepo: UserRepository = new UserRepository();
@@ -92,15 +93,25 @@ export default class Service {
   }
 
   public async getOffers(meserias_id?: string) {
-    const meseriasiOffers = await this.meseriasOffersRepo.getOffers();
-
-    if (!meserias_id) {
-      this.log("Getting all offers");
-      return meseriasiOffers;
+    try {
+      if (meserias_id) {
+        return this.meseriasOffersRepo.getMeseriasOffers(meserias_id);
+      } else {
+        return this.meseriasOffersRepo.getOffers();
+      }
+    } catch (error) {
+      this.log("Error getting offers", error);
+      throw new Error("Couldn't get offers!");
     }
+  }
 
-    this.log("Getting offers of meserias with id", meserias_id);
-    return meseriasiOffers.filter((offer) => offer.meserias.id === meserias_id);
+  public async getUserById(userId: string) {
+    try {
+      return await this.userRepo.getUserById(userId);
+    } catch (error) {
+      this.log("Error getting user", error);
+      throw new Error("Couldn't get user!");
+    }
   }
 
   public async getCategories() {

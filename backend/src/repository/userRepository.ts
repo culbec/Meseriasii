@@ -2,7 +2,9 @@ import {
   addDoc,
   collection,
   CollectionReference,
+  doc,
   getDocs,
+  getDoc,
   query,
   QuerySnapshot,
   where,
@@ -29,11 +31,11 @@ interface UserPrivate extends User {
   password: string;
 }
 
-const saltLength = 32;
-const log = getLogger("UserRepository");
+const saltRounds = 10;
 
 export class UserRepository {
   private usersCollection: CollectionReference = collection(db, "users");
+  private log = getLogger("UserRepository");
 
   /**
    * Checks if the user exists in the Firestore database
@@ -54,14 +56,13 @@ export class UserRepository {
     });
 
     if (qSnapshot.docs.length === 0) {
-      log(`User with username ${username} not found`);
+      this.log(`User with username ${username} not found`);
       return undefined;
     }
 
     const userDoc = qSnapshot.docs[0];
     const user = userDoc.data() as UserPrivate;
     user.id = userDoc.id;
-    log("user", user);
 
 
     if (!bcrypt_ts) {
@@ -83,23 +84,53 @@ export class UserRepository {
    *
    * @param user The user to be registered
    * @param password The password of the user
+   * @throws Error if the user couldn't be registered
    */
   public async register(user: User, password: string): Promise<void> {
-    if (!bcrypt_ts) {
-      bcrypt_ts = await import('bcrypt-ts');
-    }
-    const salt = await bcrypt_ts.genSalt(saltLength);
-    const hashedPassword = await bcrypt_ts.hash(password, salt);
 
-    const result = await addDoc(this.usersCollection, {
-      user,
-      userPassword: hashedPassword,
-    }).catch((error) => {
-      log("Error adding document: ", error);
-      throw new Error("Couldn't register!");
+    const salt = await genSalt(saltRounds);
+    const hashedPassword = await hash(password, salt);
+
+
+    user.date = new Date().toUTCString();
+    user.version = 1;
+    const userPrivate: UserPrivate = { ...user, password: hashedPassword };
+
+    const result = await addDoc(this.usersCollection, userPrivate).catch(
+      (error) => {
+        this.log("Error adding document: ", error);
+        throw new Error("Couldn't register!");
+      }
+    );
+
+    this.log("Document written with ID: ", result.id);
+    user.id = result.id;
+    return Promise.resolve();
+  }
+
+  /**
+   * Returns a user object from the Firestore database
+   * @param userId The id of the user
+   * @returns The user object
+   * @throws Error if the user is not found
+   */
+  public async getUserById(userId: string): Promise<User> {
+    const userRef = doc(this.usersCollection, userId);
+    const userDoc = await getDoc(userRef).catch((error) => {
+      this.log("Error getting documents: ", error);
+      throw new Error("Couldn't get user!");
     });
 
-    log("Document written with ID: ", result.id);
-    user.id = result.id;
+    if (!userDoc.exists()) {
+      this.log(`User with id ${userId} not found`);
+      throw new Error("User not found!");
+    }
+
+    const { password, ...user } = userDoc.data() as UserPrivate;
+
+    return {
+      id: userDoc.id,
+      ...user,
+    } as User;
   }
 }
