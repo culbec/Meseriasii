@@ -1,5 +1,5 @@
 # Ignore the dist directory in the backend
-/backend/dist/
+backend/dist/
 
 # Ignore node_modules directory in the backend
-/backend/node_modules/
+backend/node_modules/
