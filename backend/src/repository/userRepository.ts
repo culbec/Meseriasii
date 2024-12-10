@@ -8,8 +8,7 @@ import {
   where,
 } from "firebase/firestore";
 import { db } from "../utils/firebaseConfig";
-// import { compare, genSalt, getSalt, hash } from "bcrypt-ts";
-let bcrypt_ts: typeof import('bcrypt-ts');
+import { compare, genSalt, getSalt, hash } from "bcrypt-ts";
 
 import { getLogger } from "../utils/utils";
 
@@ -42,7 +41,6 @@ export class UserRepository {
    * @param password The password of the user
    * @returns The user if the login was successful, undefined otherwise
    */
-  
   public async login(
     username: string,
     password: string
@@ -63,17 +61,13 @@ export class UserRepository {
     user.id = userDoc.id;
     log("user", user);
 
-
-    if (!bcrypt_ts) {
-      bcrypt_ts = await import('bcrypt-ts');
-    }
     // retrieve the salt from the password
     // and rehash the password with that salt
-    const passwordSalt = bcrypt_ts.getSalt(user.password);
-    const passwordHash = await bcrypt_ts.hash(password, passwordSalt);
+    const passwordSalt = getSalt(user.password);
+    const passwordHash = await hash(password, passwordSalt);
 
     // compare the password hashes
-    const isPasswordValid = await bcrypt_ts.compare(password, passwordHash);
+    const isPasswordValid = await compare(password, passwordHash);
     return isPasswordValid ? user : undefined;
   }
 
@@ -85,11 +79,8 @@ export class UserRepository {
    * @param password The password of the user
    */
   public async register(user: User, password: string): Promise<void> {
-    if (!bcrypt_ts) {
-      bcrypt_ts = await import('bcrypt-ts');
-    }
-    const salt = await bcrypt_ts.genSalt(saltLength);
-    const hashedPassword = await bcrypt_ts.hash(password, salt);
+    const salt = await genSalt(saltLength);
+    const hashedPassword = await hash(password, salt);
 
     const result = await addDoc(this.usersCollection, {
       user,
