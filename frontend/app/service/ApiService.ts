@@ -11,7 +11,7 @@ interface RegisterResponse {
 }
 
 interface User {
-  id: string;
+  id?: string;
   username: string;
   type: string;
   first_name: string;
@@ -23,17 +23,16 @@ interface User {
 }
 
 interface Offer {
-  id: string;
-  title: string;
+  id?: string;
+  meserias: User;
+  category: Category;
   description: string;
-  price: number;
-  date: string;
-  category: string;
+  start_price: number;
 }
 
 interface Category {
-  id: string;
-  name: string;
+  id?: string;
+  Name: string;
 }
 
 class ApiService {
@@ -109,14 +108,41 @@ class ApiService {
     );
     return response.data.offers;
   }
+  /**
+   * Get offers for a specific categoty
+   */
+  async getOffersByCategory(category: string): Promise<Offer[]> {
+    try {
+      const response: AxiosResponse<{ offers?: Offer[]; message?: string }> = await axios.get(
+        `${BASE_URL}/offers/category/${category}`,
+        {
+          headers: { Authorization: `Bearer ${this.token}` },
+        }
+      );
+  
+      // Verificăm dacă răspunsul conține un array de oferte
+      if (Array.isArray(response.data.offers)) {
+        return response.data.offers;
+      }
+  
+      // Dacă răspunsul conține un mesaj, îl putem loga sau trata
+      console.warn("API returned a message:", response.data.message || "Unknown issue");
+      return []; // Returnăm o listă goală dacă nu sunt oferte
+    } catch (error) {
+      console.error("Error fetching offers by category:", error);
+      return []; // Returnăm o listă goală în caz de eroare
+    }
+  }
 
   /**
    * Get categories
    */
   async getCategories(): Promise<Category[]> {
+    console.log("getCategories");
     const response: AxiosResponse<{ categories: Category[] }> = await axios.get(
       `${BASE_URL}/categories`
     );
+    console.log(response.data.categories);
     return response.data.categories;
   }
 }

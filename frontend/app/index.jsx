@@ -1,54 +1,66 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { service } from './service/ApiService';  // Import the service instance
+import ApiService from './service/ApiService';
+
+meseriasID = "5RSOU4BBBbyXCv4a6jub"
+meseriasToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InJhZHUiLCJpYXQiOjE3MzM4NjY0MzEsImV4cCI6MTczMzg3MDAzMX0.ZUpA3KmlkzgbGWWm5dalOjJ7KR09sdTMH-KP_1Q7t88"
+
 
 const HomePage = () => {
   const navigation = useNavigation();  // Initialize navigation
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [categories, setCategories] = useState([]);
-  const [meseriasi, setMeseriasi] = useState([]);
+  const [offers, setOffers] = useState([]);
 
-  // Fetch categories and meseriasi data on component mount
+  ApiService.setToken(meseriasToken)
+
   useEffect(() => {
-    // Fetch categories
     const fetchCategories = async () => {
       try {
-        const categoriesData = await service.getCategories();
-        console.log("Fetched categories:", categoriesData);
-        setCategories(categoriesData);  // Update the state with fetched categories
-      } catch (error) {
-        console.error("Error fetching categories: ", error);
+        const categoriesData = await ApiService.getCategories()
+        setCategories(categoriesData);
+      } catch (err) { 
+        console.error("Error fetching categories: ", err);
       }
     };
-
-    // Fetch meseriasi data along with their offers
-    const fetchMeseriasiWithOffers = async () => {
-      try {
-        const meseriasiData = await service.getMeseriasi();
-        console.log("Fetched meseriasi data:", meseriasiData);
-
-        if (Array.isArray(meseriasiData)) {
-          // Properly handle each meserias's offers
-          const meseriasiWithOffers = await Promise.all(meseriasiData.map(async (meserias) => {
-            const offersForMeseriasData = await service.getMeseriasOffers(meserias.id);
-            meserias.offers = offersForMeseriasData;  // Attach offers to meserias
-            return meserias;
-          }));
-
-          setMeseriasi(meseriasiWithOffers);  // Update the state with meseriasi and their offers
-        } else {
-          console.error("Fetched meseriasi data is not an array.");
-        }
-      } catch (error) {
-        console.error("Error fetching meseriasi data: ", error);
-      }
-    };
-
     fetchCategories();
-    fetchMeseriasiWithOffers();
-  }, []);  // Empty dependency array ensures this runs only once when the component mounts
+  }, []);
 
-  // Truncate text for display in a limited space
+  useEffect(() => {
+    const fetchOffers = async () => {
+      try {
+        const offersData = await ApiService.getOffersByMeseriasId(meseriasID);  // Adjust this if needed to get all offers
+        console.log("Fetched offers:", offersData);
+        setOffers(offersData);  // Update the state with fetched offers
+      } catch (error) {
+        console.error("Error fetching offers: ", error);
+      }
+    };
+    fetchOffers();
+  }, []);
+
+  useEffect(() => {
+    const fetchOffersForCategory = async () => {
+      if (selectedCategory) {
+        try {
+          const offersData = await ApiService.getOffersByCategory(selectedCategory.Name);  // Assume ApiService has this method
+          // console.log("Fetched offers for category:", offersData);
+          setOffers(offersData);
+        } catch (err) {
+          console.error("Error fetching offers: ", err);
+        }
+      }
+    };
+ 
+    fetchOffersForCategory();
+  }, [selectedCategory]);  // Run this effect when selectedCategory changes
+
+  // Handle category selection
+  const handleCategorySelect = (category) => {
+    setSelectedCategory(category);  // Set selected category to trigger fetching offers
+  };
+
   const truncateText = (text, maxLength = 150) => {
     if (text.length > maxLength) {
       return text.slice(0, maxLength) + "...";
@@ -78,9 +90,16 @@ const HomePage = () => {
       {/* Category Bar */}
       <ScrollView horizontal style={styles.categorySection} showsHorizontalScrollIndicator={false}>
         {categories.map((category) => (
-          <View key={category.id} style={styles.category}>
-            <Text style={styles.categoryText}>{category.name}</Text>
-          </View>
+          // <View key={category.id} style={styles.category}>
+          //   <Text style={styles.categoryText}>{category.Name}</Text>
+          // </View>
+          <TouchableOpacity 
+            key={category.id} 
+            style={[styles.category, selectedCategory?.id === category.id && styles.selectedCategory]} 
+            onPress={() => handleCategorySelect(category)}
+          >
+            <Text style={styles.categoryText}>{category.Name}</Text>
+          </TouchableOpacity>
         ))}
         <TouchableOpacity style={styles.scrollButton}>
           <Text style={styles.scrollButtonText}>→</Text>
@@ -90,26 +109,23 @@ const HomePage = () => {
       {/* Offers Section */}
       <View style={styles.offersMeseriasi}>
         <Text style={styles.sectionTitle}>Oferte:</Text>
-        {meseriasi.map((meserias) =>
-          meserias.offers.map((offer, offerIndex) => (
-            <TouchableOpacity
-              key={`${meserias.id}-${offerIndex}`}
-              style={styles.meseriasCard}
-              onPress={() => navigation.navigate('OfferDetailScreen', {
-                meseriasID: meserias.id,
-                offerIndex
-              })}
-            >
-              <Text style={styles.meseriasName}>
-                {meserias.user?.[0]?.first_name || 'Unknown Meserias'} {meserias.user?.[0]?.last_name || ''}
-              </Text>
-              <Text style={styles.offerText}>
-                {truncateText(offer.description || 'No description available')}
-              </Text>
-              <Text style={styles.startPrice}>de la {offer.start_price} lei</Text>
-            </TouchableOpacity>
-          ))
-        )}
+        {offers.map((offer, index) => (
+          <TouchableOpacity
+            key={offer.id} // Unique key for each offer
+            style={styles.meseriasCard}
+            onPress={() => navigation.navigate('OfferDetailScreen', {
+              offerId: offer.id,  // Pass offer ID for detailed view
+            })}
+          >
+            <Text style={styles.offerText}>
+              {truncateText(offer.description || 'No description available')}
+            </Text>
+            <Text style={styles.categoryText}>
+              {offer.category.name} {/* Display category */}
+            </Text>
+            <Text style={styles.startPrice}>de la {offer.start_price} de lei</Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       {/* Footer Section */}
@@ -283,6 +299,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#cccccc',
     marginTop: 8,
+  },
+  selectedCategory: {
+    backgroundColor: '#4CAF50', // Culoare verde pentru selecția categoriei
   },
 });
 
