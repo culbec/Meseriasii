@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Linking, Alert, ScrollView } from 'react-native';
 import { useRoute } from '@react-navigation/native';
-import { service } from './service/service';  // Import the service instance
+import { service } from './service/ApiService';  // Import the service instance
 import { getDoc } from "firebase/firestore";  // Add this line
 const OfferDetailScreen = () => {
   const [meserias, setMeserias] = useState(null);

@@ -1,61 +1,41 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { firebase_db } from '../firebaseConfig';
-import { getDocs, collection, getDoc, doc } from 'firebase/firestore';
-import { service } from './service/service';  // Import the service instance
+import { service } from './service/ApiService';  // Import the service instance
 
 const HomePage = () => {
   const navigation = useNavigation();  // Initialize navigation
   const [categories, setCategories] = useState([]);
   const [meseriasi, setMeseriasi] = useState([]);
 
+  // Fetch categories and meseriasi data on component mount
   useEffect(() => {
     // Fetch categories
     const fetchCategories = async () => {
       try {
         const categoriesData = await service.getCategories();
         console.log("Fetched categories:", categoriesData);
-        setCategories(categoriesData);
+        setCategories(categoriesData);  // Update the state with fetched categories
       } catch (error) {
         console.error("Error fetching categories: ", error);
       }
     };
 
+    // Fetch meseriasi data along with their offers
     const fetchMeseriasiWithOffers = async () => {
       try {
-        // Fetching meseriasi data directly
         const meseriasiData = await service.getMeseriasi();
         console.log("Fetched meseriasi data:", meseriasiData);
-    
+
         if (Array.isArray(meseriasiData)) {
-          // Now, properly handle each meserias's offers
+          // Properly handle each meserias's offers
           const meseriasiWithOffers = await Promise.all(meseriasiData.map(async (meserias) => {
-            const userRef = meserias.user;
-            if (userRef) {
-              const userSnapshot = await getDoc(userRef);
-              if (userSnapshot.exists()) {
-                const userData = userSnapshot.data();
-                meserias.user = [{ first_name: userData.first_name, last_name: userData.last_name }];
-              } else {
-                console.log(`User not found for meserias with ID: ${meserias.id}`);
-              }
-            }
-            
-            // Fetch offers for this meserias
             const offersForMeseriasData = await service.getMeseriasOffers(meserias.id);
-            meserias.offers = offersForMeseriasData;
-            
-            console.log(meserias.offers);
-            // Log each offer in the requested format
-            meserias.offers.forEach((offer) => {
-              console.log(`Meserias: ${meserias.user[0].first_name} ${meserias.user[0].last_name}, Offer Description: ${offer.description}, Price: ${offer.start_price} lei`);
-            });
-    
+            meserias.offers = offersForMeseriasData;  // Attach offers to meserias
             return meserias;
           }));
-    
-          setMeseriasi(meseriasiWithOffers);
+
+          setMeseriasi(meseriasiWithOffers);  // Update the state with meseriasi and their offers
         } else {
           console.error("Fetched meseriasi data is not an array.");
         }
@@ -66,8 +46,9 @@ const HomePage = () => {
 
     fetchCategories();
     fetchMeseriasiWithOffers();
-  }, []); 
+  }, []);  // Empty dependency array ensures this runs only once when the component mounts
 
+  // Truncate text for display in a limited space
   const truncateText = (text, maxLength = 150) => {
     if (text.length > maxLength) {
       return text.slice(0, maxLength) + "...";
@@ -76,80 +57,77 @@ const HomePage = () => {
   };
 
   return (
-<ScrollView style={styles.container}>
-  
-  {/* Header Section */}
-  <View style={styles.header}>
-    <Text style={styles.logo}>Meseriasii</Text>
-    <TouchableOpacity 
-      style={styles.profilePicture} 
-      onPress={() => navigation.navigate('Login')}
-    >
-      <Text style={styles.profileText}>P</Text>
-    </TouchableOpacity>
-  </View>
-  
-  {/* Search Section */}
-  <View style={styles.searchSection}>
-    <Text style={styles.slogan}>Profesionisti la un click distanta</Text>
-    <TextInput style={styles.searchBar} placeholder="Search..." />
-  </View>
-  
-  {/* Category Bar */}
-  <ScrollView horizontal style={styles.categorySection} showsHorizontalScrollIndicator={false}>
-    {categories.map((category) => (
-      <View key={category.id} style={styles.category}>
-        <Text style={styles.categoryText}>{category.Name}</Text>
-      </View>
-    ))}
-    <TouchableOpacity style={styles.scrollButton}>
-      <Text style={styles.scrollButtonText}>→</Text>
-    </TouchableOpacity>
-  </ScrollView>
-  
-  {/* Offers Section */}
-  <View style={styles.offersMeseriasi}>
-    <Text style={styles.sectionTitle}>Oferte:</Text>
-    {meseriasi.map((meserias) =>
-      meserias.offers.map((offer, offerIndex) => (
-        <TouchableOpacity
-          key={`${meserias.id}-${offerIndex}`}
-          style={styles.meseriasCard}
-          onPress={() => navigation.navigate('OfferDetailScreen', {
-            meseriasID: meserias.id,
-            offerIndex
-          })}
+    <ScrollView style={styles.container}>
+      {/* Header Section */}
+      <View style={styles.header}>
+        <Text style={styles.logo}>Meseriasii</Text>
+        <TouchableOpacity 
+          style={styles.profilePicture} 
+          onPress={() => navigation.navigate('Login')}
         >
-          <Text style={styles.meseriasName}>
-            {meserias.user?.[0]?.first_name || 'Unknown Meserias'} {meserias.user?.[0]?.last_name || ''}
-          </Text>
-          <Text style={styles.offerText}>
-            {truncateText(offer.description || 'No description available')}
-          </Text>
-          <Text style={styles.startPrice}>de la {offer.start_price} lei</Text>
+          <Text style={styles.profileText}>P</Text>
         </TouchableOpacity>
-      ))
-    )}
-  </View>
-  
-  {/* Footer Section */}
-<View style={styles.footer}>
-  <Text style={styles.footerLogo}>Meseriasii</Text>
-  <View style={styles.contactInfo}>
-    <View style={styles.contactItem}>
-      <Text style={styles.contactLabel}>Email:</Text>
-      <Text style={styles.contactText}>nasii.meseriasii@gmail.com</Text>
-    </View>
-    <View style={styles.contactItem}>
-      <Text style={styles.contactLabel}>Phone:</Text>
-      <Text style={styles.contactText}>+07 n am cartela</Text>
-    </View>
-  </View>
-  <Text style={styles.footerCopy}>&copy; 2024 Meseriasii. All rights reserved.</Text>
-</View>
-  
-</ScrollView>
+      </View>
 
+      {/* Search Section */}
+      <View style={styles.searchSection}>
+        <Text style={styles.slogan}>Profesionisti la un click distanta</Text>
+        <TextInput style={styles.searchBar} placeholder="Search..." />
+      </View>
+
+      {/* Category Bar */}
+      <ScrollView horizontal style={styles.categorySection} showsHorizontalScrollIndicator={false}>
+        {categories.map((category) => (
+          <View key={category.id} style={styles.category}>
+            <Text style={styles.categoryText}>{category.name}</Text>
+          </View>
+        ))}
+        <TouchableOpacity style={styles.scrollButton}>
+          <Text style={styles.scrollButtonText}>→</Text>
+        </TouchableOpacity>
+      </ScrollView>
+
+      {/* Offers Section */}
+      <View style={styles.offersMeseriasi}>
+        <Text style={styles.sectionTitle}>Oferte:</Text>
+        {meseriasi.map((meserias) =>
+          meserias.offers.map((offer, offerIndex) => (
+            <TouchableOpacity
+              key={`${meserias.id}-${offerIndex}`}
+              style={styles.meseriasCard}
+              onPress={() => navigation.navigate('OfferDetailScreen', {
+                meseriasID: meserias.id,
+                offerIndex
+              })}
+            >
+              <Text style={styles.meseriasName}>
+                {meserias.user?.[0]?.first_name || 'Unknown Meserias'} {meserias.user?.[0]?.last_name || ''}
+              </Text>
+              <Text style={styles.offerText}>
+                {truncateText(offer.description || 'No description available')}
+              </Text>
+              <Text style={styles.startPrice}>de la {offer.start_price} lei</Text>
+            </TouchableOpacity>
+          ))
+        )}
+      </View>
+
+      {/* Footer Section */}
+      <View style={styles.footer}>
+        <Text style={styles.footerLogo}>Meseriasii</Text>
+        <View style={styles.contactInfo}>
+          <View style={styles.contactItem}>
+            <Text style={styles.contactLabel}>Email:</Text>
+            <Text style={styles.contactText}>nasii.meseriasii@gmail.com</Text>
+          </View>
+          <View style={styles.contactItem}>
+            <Text style={styles.contactLabel}>Phone:</Text>
+            <Text style={styles.contactText}>+07 n am cartela</Text>
+          </View>
+        </View>
+        <Text style={styles.footerCopy}>&copy; 2024 Meseriasii. All rights reserved.</Text>
+      </View>
+    </ScrollView>
   );
 };
 
@@ -192,12 +170,12 @@ const styles = StyleSheet.create({
     borderBottomColor: '#eeeeee',
   },
   slogan: {
-    fontSize: 20,          // Mărim fontul pentru a fi mai vizibil
-    fontWeight: 'bold',    // Îngroșăm textul
+    fontSize: 20,
+    fontWeight: 'bold',
     fontStyle: 'italic',
-    color: '#222',         // Întunecăm puțin culoarea pentru contrast mai mare
-    marginBottom: 12,      // Adăugăm mai mult spațiu dedesubt
-    textAlign: 'center',   // Centrăm textul pentru un efect mai plăcut vizual
+    color: '#222',
+    marginBottom: 12,
+    textAlign: 'center',
   },
   searchBar: {
     padding: 12,
