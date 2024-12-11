@@ -4,8 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import ApiService from './service/ApiService';
 
 meseriasID = "5RSOU4BBBbyXCv4a6jub"
-meseriasToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InJhZHUiLCJpYXQiOjE3MzM4NjY0MzEsImV4cCI6MTczMzg3MDAzMX0.ZUpA3KmlkzgbGWWm5dalOjJ7KR09sdTMH-KP_1Q7t88"
-
+meseriasToken = ""
 
 const HomePage = () => {
   const navigation = useNavigation();  // Initialize navigation
