@@ -110,6 +110,7 @@ export default class Service {
     }
   }
 
+
   public async getUserById(userId: string) {
     try {
       return await this.userRepo.getUserById(userId);
