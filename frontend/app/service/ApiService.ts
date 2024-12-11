@@ -1,5 +1,6 @@
 import axios, { AxiosResponse } from "axios";
 
+// ca sa rulezi de pe telefon pune in loc de localhost ip-ul retelei de pe care e pornit serverului
 const BASE_URL = "http://localhost:3000";
 
 interface LoginResponse {

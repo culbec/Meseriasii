@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import ApiService from '../service/ApiService'; // Importă ApiService
-
 const { width } = Dimensions.get('window');
 
 const RegisterScreen = () => {
@@ -12,12 +11,12 @@ const RegisterScreen = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [address, setAddress]  = useState('');
   const [password, setPassword] = useState('');
-
   const navigation = useNavigation();
 
   const handleRegister = async () => {
     if (!username || !firstName || !lastName || !phoneNumber || !address || !password) {
       Alert.alert('Eroare', 'Te rugăm să completezi toate câmpurile.');
+     
       return;
     }
 
@@ -36,7 +35,7 @@ const RegisterScreen = () => {
       const token = await ApiService.register(user, password);
 
       Alert.alert('Înregistrare reușită', `Bun venit, ${firstName}!`);
-      navigation.navigate('Login');
+      navigation.navigate('index');
     } catch (error) {
       console.error('Eroare la înregistrare:', error);
       if (error.response && error.response.data && error.response.data.message) {
@@ -111,8 +110,9 @@ const RegisterScreen = () => {
         <Text style={styles.buttonText}>Înregistrează-te</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate('Login')} style={{ marginTop: 15 }}>
+      <TouchableOpacity onPress={() => navigation.navigate('index')} style={{ marginTop: 15 }}>
         <Text style={styles.linkText}>Ai deja un cont? <Text style={{ fontWeight: 'bold' }}>Conectează-te</Text></Text>
+
       </TouchableOpacity>
     </View>
   );
