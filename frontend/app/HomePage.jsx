@@ -11,6 +11,12 @@ const HomePage = () => {
   const [categories, setCategories] = useState([]);
   const [offers, setOffers] = useState([]);
 
+  // ApiService.setToken(meseriasToken)
+
+  const route = useRoute();
+  const user = route.params.user;
+  console.log("HomePage User:", user);
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -80,7 +86,8 @@ const HomePage = () => {
         <Text style={styles.logo}>Meseriasii</Text>
         <TouchableOpacity 
           style={styles.profilePicture} 
-          onPress={() => navigation.navigate('profile/PrivateProfileScreen')}
+          onPress={() => navigation.navigate('profile/PrivateProfileScreen', { user })}
+          // onPress={() => navigation.navigate('auth/Login')}
         >
           <Text style={styles.profileText}>P</Text>
         </TouchableOpacity>
