@@ -8,13 +8,8 @@ import { useRoute } from '@react-navigation/native';
 const HomePage = () => {
   const navigation = useNavigation();  // Initialize navigation
   const [selectedCategory, setSelectedCategory] = useState(null);
-  // const [categories, setCategories] = useState([]);
-  // const [offers, setOffers] = useState([]);
-  const { offers, setOffers, categories, setCategories } = useOffers();
-
-  const route = useRoute();
-  const { username } = route.params;
-  console.log("Username:", username);
+  const [categories, setCategories] = useState([]);
+  const [offers, setOffers] = useState([]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -26,7 +21,7 @@ const HomePage = () => {
       }
     };
     fetchCategories();
-  }, [categories]);
+  }, []);
 
   useEffect(() => {
     const fetchOffers = async () => {
@@ -39,7 +34,7 @@ const HomePage = () => {
       }
     };
     fetchOffers();
-  }, [offers]);
+  }, []);
 
   useEffect(() => {
     const fetchOffersForCategory = async () => {
@@ -52,6 +47,11 @@ const HomePage = () => {
           console.error("Error fetching offers: ", err);
         }
       }
+      else{
+        const offersData = await ApiService.getOffers();  // Adjust this if needed to get all offers
+        console.log("Fetched offers:", offersData);
+        setOffers(offersData);
+      }
     };
  
     fetchOffersForCategory();
@@ -59,7 +59,11 @@ const HomePage = () => {
 
   // Handle category selection
   const handleCategorySelect = (category) => {
-    setSelectedCategory(category);  // Set selected category to trigger fetching offers
+    if(selectedCategory === category) {
+      setSelectedCategory(null);  // Set selected category to trigger fetching offers
+    } else {
+      setSelectedCategory(category);  // Set selected category to trigger fetching offers
+    }
   };
 
   const truncateText = (text, maxLength = 150) => {

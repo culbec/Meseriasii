@@ -112,14 +112,22 @@ class ApiService {
 
 
   async getOffers(): Promise<Offer[]> {
+    if (this.allOffers.length === 0) {
     const response: AxiosResponse<{ offers: Offer[] }> = await axios.get(
       `${BASE_URL}/offers`,
       {
         headers: { Authorization: `Bearer ${this.token}` },
       }
-    );
-    return response.data.offers;
+      );
+      this.allOffers = response.data.offers;
+      return response.data.offers;
+      }
+    else{
+      console.log("Loading memorised offers");
+      return this.allOffers;
+    }
   }
+
 
   /**
    * Get offers for a specific categoty
