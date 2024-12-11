@@ -32,6 +32,10 @@ const LoginScreen = () => {
     }
   };
 
+  const handleRegister = async () => {
+    navigation.navigate("auth/Register");
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Autentificare</Text>
@@ -56,8 +60,15 @@ const LoginScreen = () => {
         />
       </View>
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
+      
+      <TouchableOpacity style={[styles.button, { marginBottom: 15 }]} onPress={handleLogin}>
         <Text style={styles.buttonText}>Autentifică-te</Text>
+      </TouchableOpacity>
+
+
+
+      <TouchableOpacity style={styles.button} onPress={handleRegister}>
+        <Text style={styles.buttonText}>Register</Text>
       </TouchableOpacity>
     </View>
   );
