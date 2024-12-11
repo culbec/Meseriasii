@@ -16,12 +16,10 @@ const LoginScreen = () => {
     }
 
     try {
-      const token = await ApiService.login(username, password);
-      ApiService.setToken(token);
-      Alert.alert('Autentificare reușită', `Bun venit, ${username}!`);
-      navigation.navigate('HomePage', {
-        username: username,  // Pass offer ID for detailed view
-      });
+      const user = await ApiService.login(username, password);
+      console.log("ApiService User:", user);
+
+      navigation.navigate('HomePage', { user });
     } catch (error) {
       console.error("Eroare la autentificare:", error);
       if (error.response && error.response.data && error.response.data.message) {

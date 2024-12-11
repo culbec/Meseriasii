@@ -1,56 +1,126 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, TextInput, Modal, Button } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome'; // Importa FontAwesome pentru simbolurile iconițelor
-import { useNavigation } from '@react-navigation/native';
-import Slider from '@react-native-community/slider'; // Importa Slider
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, TextInput, Modal, Button, FlatList } from 'react-native';
+import Icon from 'react-native-vector-icons/FontAwesome';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import Slider from '@react-native-community/slider';
+import { Picker } from '@react-native-picker/picker';
+import ApiService from '../service/ApiService';
 
 const PrivateProfileScreen = () => {
   const navigation = useNavigation();
-
-  const userData = {
-    id: "5RSOU4BBBbyXCv4a6jub",
-    username: "vanessa.b",
-    first_name: "Vanessa",
-    last_name: "Brenner",
-    phone_number: "+40778883211",
-    address: "strada 1",
-    date: "Tue, 10 Dec 2024 10:12:22 GMT",
-    password: "$2a$10$6VFEFGGJY83zEqNTfH44k./M5eHIZJM9CC1.gjxcpYinQ5FWbOmwe",
-    type: "user",
-    version: 1,
-  };
+  const route = useRoute();
+  const userData = route.params.user;
+  console.log("PrivateProfileScreen User:", userData);
 
   const image = require('./images/default.png');
+  
+  const [categories, setCategories] = useState([]); // State pentru categoriile disponibile
+  const [selectedCategory, setSelectedCategory] = useState(null); // Categorie aleasă
 
-  // State pentru modal
   const [modalVisible, setModalVisible] = useState(false);
+  const [offerModalVisible, setOfferModalVisible] = useState(false);  // State pentru modalul ofertei
   const [description, setDescription] = useState('');
-  const [startPrice, setStartPrice] = useState(100); // Prețul va fi un număr
+  const [startPrice, setStartPrice] = useState(100);
+  const [offers, setOffers] = useState([]);
+  const [selectedOffer, setSelectedOffer] = useState(null);  // State pentru oferta selectată
 
-  const handleSaveDetails = () => {
-    // Validare date
-    if (!description || !startPrice) {
+  // Funcția pentru a obține ofertele utilizatorului
+  useEffect(() => {
+    const fetchOffers = async () => {
+      try {
+        const userOffers = await ApiService.getOffersByMeseriasId(userData.id);
+        console.log("Offers", userOffers);
+        setOffers(userOffers);
+      } catch (error) {
+        console.error('Error fetching offers:', error);
+      }
+    };
+
+    fetchOffers();
+  }, [userData.id]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const categoriesList = await ApiService.getCategories(); // API pentru categoriile disponibile
+        setCategories(categoriesList);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+  
+    fetchCategories();
+  }, []);
+
+
+  const handleSaveDetails = async () => {
+    if (!description || !startPrice || !selectedCategory) {
       alert('Te rog completează toate câmpurile!');
       return;
     }
-
-    // Aici poți salva datele (poate trimite către backend)
-
-    alert('Detaliile au fost salvate!');
-    setModalVisible(false); // Închide modalul după salvare
+  
+    // Creează oferta respectând structura OfferRequest
+    const offerRequest = {
+      meserias_id: userData.id,  // ID-ul meseriașului
+      category_id: selectedCategory,  // ID-ul categoriei selectate
+      description,  // Descrierea ofertei
+      start_price: startPrice,  // Prețul de start
+    };
+  
+    try {
+      // Apelează funcția din ApiService pentru a salva oferta
+      await ApiService.addOffer(offerRequest);
+  
+      // Refă un apel pentru a obține ofertele actualizate
+      const userOffers = await ApiService.getOffersByMeseriasId(userData.id);
+      setOffers(userOffers); // Actualizează lista de oferte cu cea nouă
+  
+      alert('Oferta a fost salvată!');
+      setModalVisible(false);  // Închide modalul după salvare
+    } catch (error) {
+      console.error('Error saving offer:', error);
+      alert('A apărut o eroare la salvarea ofertei!');
+    }
   };
+  
+  
+  
+
+  const handleOfferPress = (offer) => {
+    setSelectedCategory(offer.category.id);
+    console.log(offer);
+    console.log(selectedCategory);
+    setSelectedOffer(offer);  // Setează oferta selectată
+    setOfferModalVisible(true);  // Deschide modalul pentru ofertă    
+  };
+
+  const handleSaveOffer = () => {
+    // Aici poți salva modificările ofertei, inclusiv prețul și descrierea
+    alert('Oferta a fost salvată!');
+    setOfferModalVisible(false);  // Închide modalul
+  };
+
+  const renderOffer = ({ item }) => (
+    <TouchableOpacity style={styles.offerCard} onPress={() => handleOfferPress(item)}>
+    <Text style={styles.offerTitle}>{item.title}</Text>
+    <Text style={styles.offerDescription}>
+      {item.description.substring(0, 200)}{item.description.length > 100 ? '...' : ''}
+    </Text>
+    <Text>Pret de la: {item.start_price} RON</Text>
+    {/* Adaugă categoria în cardul ofertei */}
+    <Text style={styles.offerCategory}>{item.category.Name}</Text>
+  </TouchableOpacity>
+  );
 
   return (
     <ScrollView contentContainerStyle={styles.outerContainer}>
       <View style={styles.innerContainer}>
-
         <TouchableOpacity
           style={styles.settingsButton}
-          onPress={() => navigation.navigate('profile/SettingsScreen')}
+          onPress={() => navigation.navigate('profile/SettingsScreen', { userData })}
         >
           <Icon name="cogs" size={30} color="gray" />
         </TouchableOpacity>
-
 
         <TouchableOpacity
           style={styles.addButton}
@@ -62,7 +132,7 @@ const PrivateProfileScreen = () => {
         <Image source={image} style={styles.profileImage} />
         <Text style={styles.name}>{userData.first_name} {userData.last_name}</Text>
         <Text style={styles.username}>@{userData.username}</Text>
-        
+
         <View style={styles.detailRow}>
           <Icon name="phone" size={20} color="gray" />
           <Text style={styles.phone}>{userData.phone_number}</Text>
@@ -72,8 +142,17 @@ const PrivateProfileScreen = () => {
           <Icon name="home" size={20} color="gray" />
           <Text style={styles.detail}>{userData.address}</Text>
         </View>
+
+        {/* Afișează ofertele utilizatorului */}
+        <FlatList
+          data={offers}
+          renderItem={renderOffer}
+          keyExtractor={(item) => item.id.toString()}
+          style={styles.offersList}
+        />
       </View>
 
+      {/* Modal pentru crearea unei oferte noi */}
       <Modal
         visible={modalVisible}
         animationType="slide"
@@ -91,7 +170,21 @@ const PrivateProfileScreen = () => {
               onChangeText={setDescription}
               multiline={true}
             />
-            <Text style={styles.label}>Preț inițial: {startPrice} RON</Text>
+
+            {/* Picker pentru selectarea categoriei */}
+            <Text style={styles.label}>Selectează Categorie</Text>
+            <Picker
+              selectedValue={selectedCategory}
+              onValueChange={(itemValue) => setSelectedCategory(itemValue)}
+              style={styles.picker}
+            >
+              <Picker.Item label="Selectează o categorie" value={null} />
+              {categories.map((category) => (
+                <Picker.Item key={category.id} label={category.Name} value={category.id} />
+              ))}
+            </Picker>
+
+            <Text style={styles.label}>Preț de la: {startPrice} RON</Text>
             <Slider
               style={styles.slider}
               minimumValue={1}
@@ -109,6 +202,53 @@ const PrivateProfileScreen = () => {
         </View>
       </Modal>
 
+
+      {/* Modal pentru vizualizarea și editarea ofertei */}
+      <Modal
+        visible={offerModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setOfferModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Editează Oferta</Text>
+
+            <TextInput
+              style={styles.descriptionInput}
+              placeholder="Descriere"
+              value={selectedOffer?.description || ''}
+              onChangeText={(text) => setSelectedOffer({ ...selectedOffer, description: text })}
+              multiline={true}
+            />
+            <Text style={styles.label}>Selectează Categorie</Text>
+            <Picker
+              selectedValue={selectedCategory}
+              onValueChange={(itemValue) => setSelectedCategory(itemValue)}
+              style={styles.picker}
+            >
+              <Picker.Item label="Selectează o categorie" value={null} />
+              {categories.map((category) => (
+                <Picker.Item key={category.id} label={category.Name} value={category.id} />
+              ))}
+            </Picker>
+            <Text style={styles.label}>Preț de la: {selectedOffer?.start_price} RON</Text>
+            <Slider
+              style={styles.slider}
+              minimumValue={1}
+              maximumValue={10000}
+              step={10}
+              value={selectedOffer?.start_price || 100}
+              onValueChange={(value) => setSelectedOffer({ ...selectedOffer, start_price: value })}
+            />
+
+            <View style={styles.modalButtons}>
+              <Button title="Anulează" onPress={() => setOfferModalVisible(false)} />
+              <Button title="Salvează" onPress={handleSaveOffer} />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 };
@@ -116,30 +256,30 @@ const PrivateProfileScreen = () => {
 const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
-    backgroundColor: '#CED1FA', // Fundalul colorat pe toată pagina
+    backgroundColor: '#CED1FA',
     padding: 10,
   },
   innerContainer: {
     flex: 1,
-    backgroundColor: 'white', // Fundalul conținutului interior
-    borderRadius: 15, // Colțuri rotunjite ale conținutului
-    marginHorizontal: 10, // Spațiu pe margini
-    paddingVertical: 20, // Spațiu pe verticală
+    backgroundColor: 'white',
+    borderRadius: 15,
+    marginHorizontal: 10,
+    paddingVertical: 20,
     alignItems: 'center',
-    position: 'relative', // Poziționare relativă pentru a plasa iconița în colțul din dreapta sus
+    position: 'relative',
   },
   settingsButton: {
-    position: 'absolute', // Poziționăm iconița în colțul din dreapta sus al innerContainer
+    position: 'absolute',
     top: 20,
     right: 20,
-    zIndex: 1, // Asigură-te că iconița va fi deasupra altor elemente
+    zIndex: 1,
   },
   addButton: {
-    position: 'absolute', // Poziționăm iconița "+" în colțul din stânga sus
+    position: 'absolute',
     top: 20,
     left: 20,
-    backgroundColor: 'transparent', // Fără fundal colorat, ca butonul de settings
-    borderRadius: 50, // Colțuri rotunjite pentru buton
+    backgroundColor: 'transparent',
+    borderRadius: 50,
     padding: 10,
     zIndex: 1,
   },
@@ -168,15 +308,15 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   detailRow: {
-    flexDirection: 'row', // Alignăm iconița și textul pe orizontală
-    alignItems: 'center', // Aliniem iconița cu textul
-    marginBottom: 10, // Spațiu între fiecare rând
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
     width: '80%',
@@ -195,13 +335,13 @@ const styles = StyleSheet.create({
     marginTop: 15,
   },
   descriptionInput: {
-    height: 200, // Mărim înălțimea pentru caseta de descriere
+    height: 200,
     borderColor: '#ddd',
     borderWidth: 1,
     marginBottom: 15,
     paddingLeft: 10,
     borderRadius: 5,
-    textAlignVertical: 'top',  // Textul se aliniază sus
+    textAlignVertical: 'top',
   },
   label: {
     fontSize: 16,
@@ -212,6 +352,41 @@ const styles = StyleSheet.create({
     height: 40,
     marginBottom: 20,
   },
+  offersList: {
+    marginTop: 20,
+    width: '100%',
+  },
+  offerCard: {
+    padding: 10,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    width: '90%',  // Am redus lățimea cardului pentru a-l face mai îngust
+    alignSelf: 'center',  // Centrează cardul pe ecran
+  },
+  offerTitle: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginBottom: 5,
+  },
+  offerDescription: {
+    fontSize: 14,
+    color: '#555',
+    marginBottom: 5,
+  },
+  // Stiluri pentru categoria ofertei
+  offerCategory: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 5,
+  },
+  picker: {
+    height: 50,
+    width: '100%',
+    marginBottom: 15,
+  },  
 });
 
 export default PrivateProfileScreen;

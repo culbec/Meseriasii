@@ -4,14 +4,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 // ca sa rulezi de pe telefon pune in loc de localhost ip-ul retelei de pe care e pornit serverului
 const BASE_URL = "http://localhost:3000";
 
-interface LoginResponse {
-  token: string;
-}
-
-interface RegisterResponse {
-  token: string;
-}
-
 interface User {
   id?: string;
   username: string;
@@ -32,9 +24,27 @@ interface Offer {
   start_price: number;
 }
 
+export interface OfferRequest {
+  id?: string;
+  meserias_id: string;
+  category_id: string;
+  description: string;
+  start_price: number;
+}
+
 interface Category {
   id?: string;
   Name: string;
+}
+
+interface LoginResponse {
+  token: string;
+  user: User;
+}
+
+interface RegisterResponse {
+  token: string;
+  user: User;
 }
 
 class ApiService {
@@ -91,14 +101,15 @@ class ApiService {
   /**
    * Login user
    */
-  async login(username: string, password: string): Promise<string> {
-    const response: AxiosResponse<LoginResponse> = await axios.post(
+  async login(username: string, password: string): Promise<User> {
+    const response: AxiosResponse<{ token: string; user: User }> = await axios.post(
       `${BASE_URL}/auth/login`,
       { username, password }
     );
-    this.token = response.data.token;
-    await this.saveTokenToStorage(response.data.token);
-    return response.data.token;
+
+    this.setToken(response.data.token);
+
+    return response.data.user;
   }
 
   /**
@@ -130,6 +141,52 @@ class ApiService {
   }
 
   /**
+   * Update the user
+   */
+  async updateUser(user: User): Promise<User> {
+    if (!this.token) {
+      throw new Error("User is not logged in.");
+    }
+
+    const response: AxiosResponse<{ user: User }> = await axios.post(
+      `${BASE_URL}/users/update`,
+      user, // Send the user data as request body
+      {
+        headers: { Authorization: `Bearer ${this.token}` }, // Include token in the headers for authentication
+      }
+    );
+
+    // Return the updated user from the response
+    return response.data.user;
+  }
+  /**
+   * Update the user's password
+   */
+  async updateUserPassword(userId: string, oldPassword: string, newPassword: string): Promise<string> {
+    if (!this.token) {
+      throw new Error("User is not logged in.");
+    }
+
+    try {
+      // Sending the request to change the password
+      const response: AxiosResponse<{ message: string }> = await axios.post(
+        `${BASE_URL}/auth/change-password`,
+        { userId, oldPassword, newPassword },
+        {
+          headers: { Authorization: `Bearer ${this.token}` }, // Include the token for authorization
+        }
+      );
+
+      // Return the success message from the response
+      return response.data.message;
+    } catch (error) {
+      console.error("Error changing password:", error);
+      throw new Error("Could not change password! Please try again later.");
+    }
+  }
+
+
+  /**
    * Get user by ID
    */
   async getUserById(id: string): Promise<User> {
@@ -153,7 +210,7 @@ class ApiService {
       }
     );
     return response.data.offers;
-  }
+  } 
 
 
   async getOffers(): Promise<Offer[]> {
@@ -210,6 +267,25 @@ class ApiService {
     );
     console.log(response.data.categories);
     return response.data.categories;
+  }
+
+  /**
+   * Add a new offer
+   */
+  async addOffer(offer: OfferRequest): Promise<OfferRequest> {
+    try {
+      const response: AxiosResponse<{ offer: OfferRequest }> = await axios.post(
+        `${BASE_URL}/offers`,
+        offer,
+        {
+          headers: { Authorization: `Bearer ${this.token}` },
+        }
+      );
+      return response.data.offer; // Returnează oferta adăugată
+    } catch (error) {
+      console.error("Error adding offer:", error);
+      throw new Error("Couldn't add offer!");
+    }
   }
 }
 
