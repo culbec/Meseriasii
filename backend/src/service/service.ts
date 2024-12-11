@@ -1,13 +1,12 @@
 import { User, UserRepository } from "../repository/userRepository";
-import { OffersRepository } from "../repository/offersRepository";
+import { OfferRequest, OffersRepository } from "../repository/offersRepository";
 import { CategoryRepository } from "../repository/categoryRepository";
 import { getLogger } from "../utils/utils";
 import AuthManager from "../auth/authManager";
-import { error } from "console";
 
 export default class Service {
   private userRepo: UserRepository = new UserRepository();
-  private meseriasOffersRepo: OffersRepository = new OffersRepository();
+  private offersRepo: OffersRepository = new OffersRepository();
   private categoryRepo: CategoryRepository = new CategoryRepository();
 
   private authManager: AuthManager = new AuthManager();
@@ -36,11 +35,12 @@ export default class Service {
   public async login(
     username: string,
     password: string
-  ): Promise<string | undefined> {
+  ): Promise<{token: string | undefined, user: User | undefined}> {
     let token: string | undefined = undefined;
+    let user: User | undefined = undefined;
 
     try {
-      const user = await this.userRepo.login(username, password);
+      user = await this.userRepo.login(username, password);
 
       if (user) {
         token = this.authManager.generateToken(user.username);
@@ -50,7 +50,7 @@ export default class Service {
       this.log("Error logging in", error);
     }
 
-    return token;
+    return {token, user};
   }
 
   /**
@@ -95,14 +95,14 @@ export default class Service {
   public async getOffers(meserias_id?: string ,categoryName?:string) {
     try {
       if (meserias_id) {
-        return this.meseriasOffersRepo.getMeseriasOffers(meserias_id);
+        return this.offersRepo.getMeseriasOffers(meserias_id);
 
       }
       else if(categoryName){
-        return this.meseriasOffersRepo.getOffersByCategoryName(categoryName);
+        return this.offersRepo.getOffersByCategoryName(categoryName);
       }
        else {
-        return this.meseriasOffersRepo.getOffers();
+        return this.offersRepo.getOffers();
       }
     } catch (error) {
       this.log("Error getting offers", error);
@@ -120,6 +120,48 @@ export default class Service {
     }
   }
 
+  /**
+   * Updates the user with the given user object
+   * @param user The user object to be updated
+   * @returns The updated user if the operation was successful
+   * @throws Error if the operation couldn't be completed
+   */
+  public async updateUser(user: User): Promise<User> {
+    try {
+      return await this.userRepo.updateUser(user);
+    } catch (error) {
+      this.log("Error updating user", error);
+      throw new Error("Couldn't update user!");
+    }
+  }
+
+  /**
+   * Changes the password of the user with the given id
+   * @param userId The id of the user
+   * @param oldPassword The old password
+   * @param newPassword The new password
+   * @throws Error if the operation couldn't be completed
+   */
+  public async changePassword(userId: string, oldPassword: string, newPassword: string) {
+    try {
+      await this.userRepo.changePassword(userId, oldPassword, newPassword);
+    } catch (error) {
+      this.log("Error changing password", error);
+      throw new Error("Couldn't change password!");
+    }
+  }
+  public async addOffer(offer: OfferRequest) {
+    try {
+      await this.offersRepo.addOffer(offer);
+    } catch (error) {
+      this.log("Error adding offer", error);
+      throw new Error("Couldn't add offer!");
+    }
+  }
+  /**
+   * Gets the categories from the CategoryRepository instance
+   * @returns The categories if the operation was successful, an empty array otherwise
+   */
   public async getCategories() {
     return this.categoryRepo.getCategories();
   }

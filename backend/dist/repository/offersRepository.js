@@ -34,10 +34,12 @@ class OffersRepository {
             const id = doc.id;
             const categoryRef = data.category;
             const categoryDoc = await (0, firestore_1.getDoc)(categoryRef);
-            const category = categoryDoc.data();
+            // const category = categoryDoc.data() as Category;
+            const category = Object.assign({ id: categoryDoc.id }, categoryDoc.data());
             const meseriasRef = data.meserias;
             const meseriasDoc = await (0, firestore_1.getDoc)(meseriasRef);
-            const meserias = meseriasDoc.data();
+            const meserias = Object.assign({ id: meseriasDoc.id }, meseriasDoc.data());
+            // const meserias = meseriasDoc.data() as User;
             const offer = {
                 id,
                 meserias,
@@ -72,7 +74,8 @@ class OffersRepository {
             const id = doc.id;
             const categoryRef = data.category;
             const categoryDoc = await (0, firestore_1.getDoc)(categoryRef);
-            const category = categoryDoc.data();
+            const category = Object.assign({ id: categoryDoc.id }, categoryDoc.data());
+            // const category = categoryDoc.data() as Category;
             const offer = {
                 id,
                 meserias,
@@ -83,6 +86,33 @@ class OffersRepository {
             offers.push(offer);
         }
         return offers;
+    }
+    async addOffer(offer) {
+        const { meserias_id, category_id } = offer, rest = __rest(offer, ["meserias_id", "category_id"]);
+        const meseriasRef = (0, firestore_1.doc)(this.usersCollection, meserias_id);
+        const meseriasDoc = await (0, firestore_1.getDoc)(meseriasRef).catch((error) => {
+            this.log("Error getting documents: ", error);
+            throw new Error("Couldn't get meserias!");
+        });
+        if (!meseriasDoc.exists()) {
+            this.log("Meserias not found!");
+            throw new Error("Meserias not found!");
+        }
+        const categoryRef = (0, firestore_1.doc)((0, firestore_1.collection)(firebaseConfig_1.db, "categories"), category_id);
+        const categoryDoc = await (0, firestore_1.getDoc)(categoryRef).catch((error) => {
+            this.log("Error getting documents: ", error);
+            throw new Error("Couldn't get category!");
+        });
+        if (!categoryDoc.exists()) {
+            this.log("Category not found!");
+            throw new Error("Category not found!");
+        }
+        const newOffer = Object.assign({ meserias: meseriasRef, category: categoryRef }, rest);
+        await (0, firestore_1.addDoc)(this.offersCollection, newOffer).catch((error) => {
+            this.log("Error adding document: ", error);
+            throw new Error("Couldn't add offer!");
+        });
+        return;
     }
     async getOffersByCategoryName(categoryName) {
         try {
