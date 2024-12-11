@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import ApiService from './service/ApiService'; // Importă ApiService
+import ApiService from '../service/ApiService'; // Importă ApiService
 
 const { width } = Dimensions.get('window');
 

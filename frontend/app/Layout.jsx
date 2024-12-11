@@ -6,9 +6,14 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import OfferDetailScreen from './OfferDetailScreen'; // Import OfferDetailScreen
-import HomePage from './index';
+import HomePage from './HomePage';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
+import LoginScreen from '.';
+
+// import SettingsScreen from './profile/SettingsScreen';
+// import PrivateProfileScreen from './profile/PrivateProfileScreen';
+// import PublicProfileScreen from './profile/PublicProfileScreen';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -32,8 +37,12 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
-        <Stack.Screen name="index" component={HomePage} options={{ headerShown: false }} />
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="HomePage" component={HomePage} options={{ headerShown: false }} />
         <Stack.Screen name="OfferDetailScreen" component={OfferDetailScreen} />
+        {/* <Stack.Screen name="profile/SettingsScreen" component={SettingsScreen} />
+        <Stack.Screen name="profile/PrivateProfile" component={PrivateProfileScreen} />
+        <Stack.Screen name="profile/PublicProfile" component={PublicProfileScreen} />  */}
       </Stack>
     </ThemeProvider>
   );

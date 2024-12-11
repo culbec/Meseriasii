@@ -108,6 +108,18 @@ class ApiService {
     );
     return response.data.offers;
   }
+
+
+  async getOffers(): Promise<Offer[]> {
+    const response: AxiosResponse<{ offers: Offer[] }> = await axios.get(
+      `${BASE_URL}/offers`,
+      {
+        headers: { Authorization: `Bearer ${this.token}` },
+      }
+    );
+    return response.data.offers;
+  }
+
   /**
    * Get offers for a specific categoty
    */

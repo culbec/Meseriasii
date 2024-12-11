@@ -212,6 +212,30 @@ async function startServer() {
   });
 
 
+  router.get("/offers", async (ctx) => {
+  
+    log(`Fetching offers`);
+  
+    try {
+      const offers = await service.getOffers(); // Call the service method
+      log("offers", offers);
+  
+      if (!offers || offers.length === 0) {
+        ctx.status = 404;
+        ctx.body = { message: "No offers found for the specified category." };
+        return;
+      }
+  
+      ctx.status = 200;
+      ctx.body = { offers };
+    } catch (error) {
+      log("Error fetching offers by category:", error);
+      ctx.status = 500;
+      ctx.body = { message: "Could not fetch offers! Please try again later." };
+    }
+  });
+
+
 
 
   app.use(KoaLogger());
