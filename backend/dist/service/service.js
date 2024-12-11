@@ -11,7 +11,7 @@ const authManager_1 = __importDefault(require("../auth/authManager"));
 class Service {
     constructor() {
         this.userRepo = new userRepository_1.UserRepository();
-        this.meseriasOffersRepo = new offersRepository_1.OffersRepository();
+        this.offersRepo = new offersRepository_1.OffersRepository();
         this.categoryRepo = new categoryRepository_1.CategoryRepository();
         this.authManager = new authManager_1.default();
         this.loggedInUsers = new Map();
@@ -36,8 +36,9 @@ class Service {
      */
     async login(username, password) {
         let token = undefined;
+        let user = undefined;
         try {
-            const user = await this.userRepo.login(username, password);
+            user = await this.userRepo.login(username, password);
             if (user) {
                 token = this.authManager.generateToken(user.username);
                 this.loggedInUsers.set(token, user);
@@ -46,7 +47,7 @@ class Service {
         catch (error) {
             this.log("Error logging in", error);
         }
-        return token;
+        return { token, user };
     }
     /**
      * Registers the user with the given user object and password
@@ -79,13 +80,19 @@ class Service {
     checkLoggedIn(token) {
         return this.loggedInUsers.has(token);
     }
+    /**
+     * Gets the offers from the OffersRepository instance
+     * @param meserias_id The id of the meserias to get the offers for
+     * @returns The offers if the operation was successful, an empty array otherwise
+     * @throws Error if the operation couldn't be completed
+     */
     async getOffers(meserias_id) {
         try {
             if (meserias_id) {
-                return this.meseriasOffersRepo.getMeseriasOffers(meserias_id);
+                return this.offersRepo.getMeseriasOffers(meserias_id);
             }
             else {
-                return this.meseriasOffersRepo.getOffers();
+                return this.offersRepo.getOffers();
             }
         }
         catch (error) {
@@ -93,6 +100,26 @@ class Service {
             throw new Error("Couldn't get offers!");
         }
     }
+    /**
+     * Adds the offer to the OffersRepository instance
+     * @param offer The offer to be added
+     * @throws Error if the operation couldn't be completed
+     */
+    async addOffer(offer) {
+        try {
+            await this.offersRepo.addOffer(offer);
+        }
+        catch (error) {
+            this.log("Error adding offer", error);
+            throw new Error("Couldn't add offer!");
+        }
+    }
+    /**
+     * Retrieves the user with the given id from the UserRepository instance
+     * @param userId The id of the user
+     * @returns The user if the operation was successful, an empty object otherwise
+     * @throws Error if the operation couldn't be completed
+     */
     async getUserById(userId) {
         try {
             return await this.userRepo.getUserById(userId);
@@ -102,6 +129,41 @@ class Service {
             throw new Error("Couldn't get user!");
         }
     }
+    /**
+     * Updates the user with the given user object
+     * @param user The user object to be updated
+     * @returns The updated user if the operation was successful
+     * @throws Error if the operation couldn't be completed
+     */
+    async updateUser(user) {
+        try {
+            return await this.userRepo.updateUser(user);
+        }
+        catch (error) {
+            this.log("Error updating user", error);
+            throw new Error("Couldn't update user!");
+        }
+    }
+    /**
+     * Changes the password of the user with the given id
+     * @param userId The id of the user
+     * @param oldPassword The old password
+     * @param newPassword The new password
+     * @throws Error if the operation couldn't be completed
+     */
+    async changePassword(userId, oldPassword, newPassword) {
+        try {
+            await this.userRepo.changePassword(userId, oldPassword, newPassword);
+        }
+        catch (error) {
+            this.log("Error changing password", error);
+            throw new Error("Couldn't change password!");
+        }
+    }
+    /**
+     * Gets the categories from the CategoryRepository instance
+     * @returns The categories if the operation was successful, an empty array otherwise
+     */
     async getCategories() {
         return this.categoryRepo.getCategories();
     }

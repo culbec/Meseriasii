@@ -5,12 +5,15 @@ import {
   doc,
   getDocs,
   getDoc,
+  updateDoc,
   query,
   QuerySnapshot,
   where,
 } from "firebase/firestore";
 import { db } from "../utils/firebaseConfig";
-import { compare, genSalt, getSalt, hash } from "bcrypt-ts";
+
+// import { compare, genSalt, getSalt, hash } from "bcrypt-ts";
+let bcrypt_ts: typeof import("bcrypt-ts");
 
 import { getLogger } from "../utils/utils";
 
@@ -43,6 +46,7 @@ export class UserRepository {
    * @param password The password of the user
    * @returns The user if the login was successful, undefined otherwise
    */
+
   public async login(
     username: string,
     password: string
@@ -62,6 +66,10 @@ export class UserRepository {
     const user = userDoc.data() as UserPrivate;
     user.id = userDoc.id;
 
+
+    if (!bcrypt_ts) {
+      bcrypt_ts = await import("bcrypt-ts");
+    }
     // retrieve the salt from the password
     // and rehash the password with that salt
     const passwordSalt = getSalt(user.password);
@@ -81,8 +89,13 @@ export class UserRepository {
    * @throws Error if the user couldn't be registered
    */
   public async register(user: User, password: string): Promise<void> {
-    const salt = await genSalt(saltRounds);
-    const hashedPassword = await hash(password, salt);
+
+    if (!bcrypt_ts) {
+      bcrypt_ts = await import("bcrypt-ts");
+    }
+
+    const salt = await bcrypt_ts.genSalt(saltRounds);
+    const hashedPassword = await bcrypt_ts.hash(password, salt);
 
 
     user.date = new Date().toUTCString();
@@ -125,5 +138,73 @@ export class UserRepository {
       id: userDoc.id,
       ...user,
     } as User;
+  }
+
+  /**
+   * Updates the specified user
+   * @param user the user to be updated
+   * @throws Error if the user couldn't be updated
+   */
+  public async updateUser(user: User): Promise<User> {
+    const userRef = doc(this.usersCollection, user.id);
+    
+    user.date = new Date().toUTCString();
+    user.version += 1;
+
+    const { id, ...updateData } = user;
+
+
+    await updateDoc(userRef, updateData).catch((error) => {
+      this.log("Error updating document: ", error);
+      throw new Error("Couldn't update user!");
+    });
+
+    return user;
+  }
+
+  /**
+   * Changes the password of the user
+   * @param userId The id of the user
+   * @param oldPassword The old password
+   * @param newPassword The new password
+   * @throws Error if the password couldn't be changed
+   */
+  public async changePassword(
+    userId: string,
+    oldPassword: string,
+    newPassword: string
+  ) {
+    const userRef = doc(this.usersCollection, userId);
+    const userDoc = await getDoc(userRef).catch((error) => {
+      this.log("Error getting documents: ", error);
+      throw new Error("Couldn't get user!");
+    });
+
+    if (!userDoc.exists()) {
+      this.log(`User with id ${userId} not found`);
+      throw new Error("User not found!");
+    }
+
+    const { password, ...user } = userDoc.data() as UserPrivate;
+
+    // check if the old password is correct
+    const isPasswordValid = await bcrypt_ts.compare(oldPassword, password);
+    if (!isPasswordValid) {
+      throw new Error("Invalid password!");
+    }
+
+    if (!bcrypt_ts) {
+      bcrypt_ts = await import("bcrypt-ts");
+    }
+
+    // update the password
+    const salt = await bcrypt_ts.genSalt(saltRounds);
+    const hashedPassword = await bcrypt_ts.hash(newPassword, salt);
+    await updateDoc(userRef, { password: hashedPassword }).catch((error) => {
+      this.log("Error updating document: ", error);
+      throw new Error("Couldn't change password!");
+    });
+
+    return Promise.resolve();
   }
 }
