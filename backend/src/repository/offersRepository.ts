@@ -1,11 +1,11 @@
 import {
   CollectionReference,
   DocumentReference,
-  DocumentSnapshot,
   collection,
   doc,
   getDoc,
   getDocs,
+  addDoc,
   query,
   where,
 } from "firebase/firestore";
@@ -19,6 +19,14 @@ interface Offer {
   id?: string;
   meserias: User;
   category: Category;
+  description: string;
+  start_price: number;
+}
+
+export interface OfferRequest {
+  id?: string;
+  meserias_id: string;
+  category_id: string;
   description: string;
   start_price: number;
 }
@@ -111,6 +119,45 @@ export class OffersRepository {
     }
 
     return offers;
+  }
+
+  public async addOffer(offer: OfferRequest): Promise<void> {
+    const { meserias_id, category_id, ...rest } = offer;
+
+    const meseriasRef = doc(this.usersCollection, meserias_id);
+    const meseriasDoc = await getDoc(meseriasRef).catch((error) => {
+      this.log("Error getting documents: ", error);
+      throw new Error("Couldn't get meserias!");
+    });
+
+    if (!meseriasDoc.exists()) {
+      this.log("Meserias not found!");
+      throw new Error("Meserias not found!");
+    }
+
+    const categoryRef = doc(collection(db, "categories"), category_id);
+    const categoryDoc = await getDoc(categoryRef).catch((error) => {
+      this.log("Error getting documents: ", error);
+      throw new Error("Couldn't get category!");
+    });
+
+    if (!categoryDoc.exists()) {
+      this.log("Category not found!");
+      throw new Error("Category not found!");
+    }
+
+    const newOffer = {
+      meserias: meseriasRef,
+      category: categoryRef,
+      ...rest,
+    }
+
+    await addDoc(this.offersCollection, newOffer).catch((error) => {
+      this.log("Error adding document: ", error);
+      throw new Error("Couldn't add offer!");
+    });
+
+    return;
   }
 
   public async getOffersByCategoryName(categoryName: string): Promise<Offer[]> {
