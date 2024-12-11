@@ -36,8 +36,9 @@ class Service {
      */
     async login(username, password) {
         let token = undefined;
+        let user = undefined;
         try {
-            const user = await this.userRepo.login(username, password);
+            user = await this.userRepo.login(username, password);
             if (user) {
                 token = this.authManager.generateToken(user.username);
                 this.loggedInUsers.set(token, user);
@@ -46,7 +47,7 @@ class Service {
         catch (error) {
             this.log("Error logging in", error);
         }
-        return token;
+        return { token, user };
     }
     /**
      * Registers the user with the given user object and password

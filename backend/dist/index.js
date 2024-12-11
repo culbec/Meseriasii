@@ -40,15 +40,14 @@ async function startServer() {
                 return;
             }
         }
-        const result = await service.login(username, password);
-        if (!result) {
+        const { token, user } = await service.login(username, password);
+        if (!token) {
             ctx.status = 404;
             ctx.body = { message: "Invalid username or password" };
             return;
         }
-        log("token", result);
         ctx.status = 200;
-        ctx.body = { token: result };
+        ctx.body = { token: token, user: user };
     });
     // Register route
     router.post("/auth/register", async (ctx) => {

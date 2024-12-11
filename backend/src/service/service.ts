@@ -35,11 +35,12 @@ export default class Service {
   public async login(
     username: string,
     password: string
-  ): Promise<string | undefined> {
+  ): Promise<{token: string | undefined, user: User | undefined}> {
     let token: string | undefined = undefined;
+    let user: User | undefined = undefined;
 
     try {
-      const user = await this.userRepo.login(username, password);
+      user = await this.userRepo.login(username, password);
 
       if (user) {
         token = this.authManager.generateToken(user.username);
@@ -49,7 +50,7 @@ export default class Service {
       this.log("Error logging in", error);
     }
 
-    return token;
+    return {token, user};
   }
 
   /**
