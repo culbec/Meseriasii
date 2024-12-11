@@ -9,6 +9,7 @@ import CoBody from "co-body";
 import Service from "./service/service";
 import { createAuthMiddleware } from "./auth/authMiddleware";
 import { getLogger } from "./utils/utils";
+import { OfferRequest } from "./repository/offersRepository";
 
 const app = new Application();
 app.use(cors());
@@ -21,14 +22,7 @@ const log = getLogger("Server");
 async function startServer() {
   const authMiddleware = await createAuthMiddleware(service);
 
-  log("Setting up routes");
-
-  log("Setting up test route");
-  // Test route
-  router.get("/", async (ctx) => {
-    ctx.body = { message: "Hello, World!" };
-  });
-  log("Setup up test route");
+  log("Setting up routes\n");
 
   log("Setting up auth routes");
   // Login route
@@ -55,18 +49,16 @@ async function startServer() {
       }
     }
 
-    const result = await service.login(username, password);
+    const {token, user} = await service.login(username, password);
 
-    if (!result) {
+    if (!token) {
       ctx.status = 404;
       ctx.body = { message: "Invalid username or password" };
       return;
     }
 
-    log("token", result);
-
     ctx.status = 200;
-    ctx.body = { token: result };
+    ctx.body = { token: token, user: user };
   });
 
   // Register route
@@ -94,16 +86,9 @@ async function startServer() {
     ctx.status = 200;
     ctx.body = { token: result };
   });
-  log("Setup auth routes");
+  log("Setup auth routes\n");
 
-  log("Setting up protected routes");
-
-  log("Setting up protected test route");
-  // Protected test route
-  router.get("/protected", authMiddleware, async (ctx) => {
-    ctx.body = { message: "Protected route" };
-  });
-  log("Setup protected test route");
+  log("Setting up protected routes\n");
 
   log("Setting up logout route");
   // Logout route
@@ -128,7 +113,7 @@ async function startServer() {
     ctx.body = { message: "Logged out" };
   });
 
-  log("Setup logout route");
+  log("Setup logout route\n");
 
   log("Setting up get user by id route");
   router.get("/users/:id", authMiddleware, async (ctx) => {
@@ -151,8 +136,63 @@ async function startServer() {
       ctx.body = { message: "Could not get user! Please try again later." };
     }
   });
+  log("Setup get user by id route\n");
 
-  log("Setting up offer route");
+  log("Setting up update user route");
+  router.post("/users/update", authMiddleware, async (ctx) => {
+    const body = await CoBody.json(ctx);
+    const user = body;
+
+    if (typeof user !== "object") {
+      ctx.status = 400;
+      ctx.body = { message: "Invalid request" };
+      return;
+    }
+
+    try {
+      const newUser = await service.updateUser(user);
+
+      ctx.status = 200;
+      ctx.body = { user: newUser };
+    } catch (error) {
+      log("Error updating user", error);
+      ctx.status = 400;
+      ctx.body = { message: "Could not update user! Please try again later." };
+    }
+  });
+  log("Setup update user route\n");
+
+  log("Setting up change password route");
+  router.post("/auth/change-password", authMiddleware, async (ctx) => {
+    const body = await CoBody.json(ctx);
+    const { userId, oldPassword, newPassword } = body;
+
+    if (
+      typeof userId !== "string" ||
+      typeof oldPassword !== "string" ||
+      typeof newPassword !== "string"
+    ) {
+      ctx.status = 400;
+      ctx.body = { message: "Invalid request" };
+      return;
+    }
+
+    try {
+      await service.changePassword(userId, oldPassword, newPassword);
+
+      ctx.status = 200;
+      ctx.body = { message: "Password changed" };
+    } catch (error) {
+      log("Error changing password", error);
+      ctx.status = 400;
+      ctx.body = {
+        message: "Could not change password! Please try again later.",
+      };
+    }
+  });
+  log("Setup change password route\n");
+
+  log("Setting up meserias offers route");
   router.get("/offers/meserias/:id", authMiddleware, async (ctx) => {
     const meserias_id = ctx.params.id;
 
@@ -172,15 +212,42 @@ async function startServer() {
       ctx.body = { message: "Could not get offers! Please try again later." };
     }
   });
-  log("Setup get offers route");
+  log("Setup get meserias offers route\n");
 
+  log("Setting up add offer route");
+  router.post("/offers", authMiddleware, async (ctx) => {
+    const body = await CoBody.json(ctx);
+    const offer = body;
+
+    if (typeof offer !== "object") {
+      ctx.status = 400;
+      ctx.body = { message: "Invalid request" };
+      return;
+    }
+
+    try {
+      await service.addOffer(offer as OfferRequest);
+
+      ctx.status = 200;
+      ctx.body = { message: "Offer added" };
+    } catch (error) {
+      log("Error adding offer", error);
+      ctx.status = 400;
+      ctx.body = { message: "Could not add offer! Please try again later." };
+    }
+  });
+  log("Setup add offer route\n");
+
+  log("Setting up categories route");
   router.get("/categories", async (ctx) => {
     const categories = await service.getCategories();
     log("categories", categories);
 
     if (!categories) {
       ctx.status = 404;
-      ctx.body = { message: "Could not get categories! Please try again later." };
+      ctx.body = {
+        message: "Could not get categories! Please try again later.",
+      };
       return;
     }
 
