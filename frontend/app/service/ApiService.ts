@@ -38,7 +38,7 @@ interface Category {
 
 class ApiService {
   private token: string | null = null;
-
+  private allOffers: Offer[] = [];
   /**
    * Set the authorization token
    */

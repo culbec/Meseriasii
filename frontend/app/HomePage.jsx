@@ -1,20 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import ApiService from './service/ApiService';
 import { useRoute } from '@react-navigation/native';
 
-// meseriasID = "5RSOU4BBBbyXCv4a6jub"
-// meseriasToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InJhZHUiLCJpYXQiOjE3MzM5MjgyNjcsImV4cCI6MTczMzkzMTg2N30.Q5Fke1jGuaIDAwkZbSkIDUKm42GkCID0vmLMPUleOMY"
-
 
 const HomePage = () => {
   const navigation = useNavigation();  // Initialize navigation
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [categories, setCategories] = useState([]);
-  const [offers, setOffers] = useState([]);
-
-  // ApiService.setToken(meseriasToken)
+  // const [categories, setCategories] = useState([]);
+  // const [offers, setOffers] = useState([]);
+  const { offers, setOffers, categories, setCategories } = useOffers();
 
   const route = useRoute();
   const { username } = route.params;
@@ -30,7 +26,7 @@ const HomePage = () => {
       }
     };
     fetchCategories();
-  }, []);
+  }, [categories]);
 
   useEffect(() => {
     const fetchOffers = async () => {
@@ -43,7 +39,7 @@ const HomePage = () => {
       }
     };
     fetchOffers();
-  }, []);
+  }, [offers]);
 
   useEffect(() => {
     const fetchOffersForCategory = async () => {
@@ -81,7 +77,6 @@ const HomePage = () => {
         <TouchableOpacity 
           style={styles.profilePicture} 
           onPress={() => navigation.navigate('profile/PrivateProfileScreen')}
-          // onPress={() => navigation.navigate('auth/Login')}
         >
           <Text style={styles.profileText}>P</Text>
         </TouchableOpacity>
@@ -96,9 +91,6 @@ const HomePage = () => {
       {/* Category Bar */}
       <ScrollView horizontal style={styles.categorySection} showsHorizontalScrollIndicator={false}>
         {categories.map((category) => (
-          // <View key={category.id} style={styles.category}>
-          //   <Text style={styles.categoryText}>{category.Name}</Text>
-          // </View>
           <TouchableOpacity 
             key={category.id} 
             style={[styles.category, selectedCategory?.id === category.id && styles.selectedCategory]} 
@@ -120,8 +112,10 @@ const HomePage = () => {
             key={offer.id} // Unique key for each offer
             style={styles.meseriasCard}
             onPress={() => navigation.navigate('OfferDetailScreen', {
-              offerId: offer.id,  // Pass offer ID for detailed view
-            })}
+              selectedOffer: offer,  // Pass offer ID for detailed view
+            }
+          )
+        }
           >
             <Text style={styles.offerText}>
               {truncateText(offer.description || 'No description available')}
