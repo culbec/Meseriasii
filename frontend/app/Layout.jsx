@@ -20,6 +20,19 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
+  useEffect(() => {
+    const checkToken = async () => {
+      await ApiService.loadTokenFromStorage();
+      const token = await AsyncStorage.getItem("authToken");
+      if (token) {
+        console.log("Token found:", token);
+        // Redirect to the home page or auto-login if needed
+      } else {
+        console.log("No token found, redirecting to login.");
+      }
+    };
+    checkToken();
+  }, []);
 
   useEffect(() => {
     if (loaded) {
@@ -30,6 +43,8 @@ export default function RootLayout() {
   if (!loaded) {
     return null;
   }
+
+  
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

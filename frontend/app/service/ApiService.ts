@@ -1,4 +1,5 @@
 import axios, { AxiosResponse } from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // ca sa rulezi de pe telefon pune in loc de localhost ip-ul retelei de pe care e pornit serverului
 const BASE_URL = "http://localhost:3000";
@@ -39,11 +40,52 @@ interface Category {
 class ApiService {
   private token: string | null = null;
   private allOffers: Offer[] = [];
+  private selectedOffer: Offer | null = null;
   /**
    * Set the authorization token
    */
   setToken(token: string): void {
     this.token = token;
+    this.saveTokenToStorage(token);
+  }
+
+  async loadTokenFromStorage(): Promise<void> {
+    try {
+      const storedToken = await AsyncStorage.getItem("authToken");
+      if (storedToken) {
+        this.token = storedToken;
+        console.log("Token loaded from storage", this.token);
+      }
+    } catch (error) {
+      console.error("Failed to load token from storage:", error);
+    }
+    
+  }
+
+  async clearTokenFromStorage(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem("authToken");
+      this.token = null;
+    } catch (error) {
+      console.error("Failed to clear token from storage:", error);
+    }
+  }
+
+  async saveTokenToStorage(token: string): Promise<void> {
+    try {
+      await AsyncStorage.setItem("authToken", token);
+    } catch (error) {
+      console.error("Failed to save token to storage:", error);
+    }
+    console.log("Token saved to storage", token);
+  }
+
+  setSelectedOffer(offer: Offer): void {
+    this.selectedOffer = offer;
+  }
+
+  getSelectedOffer(): Offer | null {
+    return this.selectedOffer;
   }
 
   /**
@@ -55,6 +97,7 @@ class ApiService {
       { username, password }
     );
     this.token = response.data.token;
+    await this.saveTokenToStorage(response.data.token);
     return response.data.token;
   }
 
@@ -67,6 +110,7 @@ class ApiService {
       { user, password }
     );
     this.token = response.data.token;
+    await this.saveTokenToStorage(response.data.token);
     return response.data.token;
   }
 
@@ -82,6 +126,7 @@ class ApiService {
       headers: { Authorization: `Bearer ${this.token}` },
     });
     this.token = null;
+    await this.clearTokenFromStorage();
   }
 
   /**

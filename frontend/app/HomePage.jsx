@@ -115,6 +115,7 @@ const HomePage = () => {
           <TouchableOpacity
             key={offer.id} // Unique key for each offer
             style={styles.meseriasCard}
+            
             onPress={() => navigation.navigate('OfferDetailScreen', {
               selectedOffer: offer,  // Pass offer ID for detailed view
             }

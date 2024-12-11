@@ -1,12 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Linking, Alert, ScrollView } from 'react-native';
 import { useRoute } from '@react-navigation/native';
+import ApiService from './service/ApiService';
 
 const OfferDetailScreen = () => {
   const route = useRoute();
-  const { selectedOffer } = route.params;
-  console.log("Selected offer:", selectedOffer)
-
+  let { selectedOffer } = route.params;
+  // console.log("Selected offer:", selectedOffer)
+  if (selectedOffer) {
+    ApiService.setSelectedOffer(selectedOffer);
+    console.log("Selected offer from service:", selectedOffer)
+  }
+  else{
+    selectedOffer = ApiService.getSelectedOffer();
+    console.log("NULL Selected offer from service:", selectedOffer)
+    
+  }
   const handleCallPress = () => {
     if (phoneNumber) {
       Linking.openURL(`tel:${phoneNumber}`).catch(() => {
@@ -17,14 +26,23 @@ const OfferDetailScreen = () => {
     }
   };
 
-  const category = selectedOffer.category.Name || 'Necunoscut';
+  const handleMeseriasProfilePress = () => {
+    // ApiService.setSelectedOffer(selectedOffer)
+    navigation.navigate('profile/PublicProfileScreen', {
+      meserias: selectedOffer.meserias,
+    });
+  };
+
+  // const category = selectedOffer.category.Name || 'Necunoscut';
 
   return (
 <ScrollView contentContainerStyle={styles.container}>
   <View style={styles.header}>
-    <Text style={styles.offerTitle}>
-      Oferta de la {`${selectedOffer.meserias.first_name || 'N/A'} ${selectedOffer.meserias.last_name_name || ''}`}
-    </Text>
+    <TouchableOpacity  onPress={handleMeseriasProfilePress}>
+      <Text style={styles.offerTitle}>
+        Oferta de la {`${selectedOffer.meserias.first_name || 'N/A'} ${selectedOffer.meserias.last_name_name || ''}`}
+      </Text>
+    </TouchableOpacity>
   </View>
 
   <View style={styles.offerDetail}>
