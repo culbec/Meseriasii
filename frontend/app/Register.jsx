@@ -21,10 +21,9 @@ const RegisterScreen = () => {
       return;
     }
 
-    // Construiește obiectul user conform cerințelor backend-ului
     const user = {
       username: username,
-      type: 'meserias',  // Dacă backend-ul tău necesită un anumit 'type', îl pui aici. Dacă nu, șterge-l.
+      type: 'meserias',
       first_name: firstName,
       last_name: lastName,
       phone_number: phoneNumber,
@@ -34,10 +33,8 @@ const RegisterScreen = () => {
     };
 
     try {
-      // Apelează ApiService pentru a trimite datele la backend
       const token = await ApiService.register(user, password);
 
-      // Dacă am ajuns aici, înregistrarea a fost cu succes și avem un token
       Alert.alert('Înregistrare reușită', `Bun venit, ${firstName}!`);
       navigation.navigate('Login');
     } catch (error) {
