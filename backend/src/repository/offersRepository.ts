@@ -53,11 +53,14 @@ export class OffersRepository {
 
       const categoryRef = data.category as DocumentReference<Category>;
       const categoryDoc = await getDoc(categoryRef);
-      const category = categoryDoc.data() as Category;
+      // const category = categoryDoc.data() as Category;
+      const category = { id: categoryDoc.id, ...(categoryDoc.data() as Category) };
+
 
       const meseriasRef = data.meserias as DocumentReference<User>;
       const meseriasDoc = await getDoc(meseriasRef);
-      const meserias = meseriasDoc.data() as User;
+      const meserias = { id: meseriasDoc.id, ...(meseriasDoc.data() as User) };
+      // const meserias = meseriasDoc.data() as User;
 
       const offer: Offer = {
         id,
@@ -105,7 +108,8 @@ export class OffersRepository {
 
       const categoryRef = data.category as DocumentReference<Category>;
       const categoryDoc = await getDoc(categoryRef);
-      const category = categoryDoc.data() as Category;
+      const category = { id: categoryDoc.id, ...(categoryDoc.data() as Category) };
+      // const category = categoryDoc.data() as Category;
 
       const offer: Offer = {
         id,
@@ -217,7 +221,6 @@ export class OffersRepository {
         // Construct the meserias object with proper typing
         const meserias = { id: meseriasDoc.id, ...(meseriasDoc.data() as User) };
         
-
         const offer: Offer = {
           id,
           meserias,

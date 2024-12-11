@@ -36,7 +36,8 @@ export class CategoryRepository {
 
     const categories: Category[] = [];
     for (const doc of qSnapshot.docs) {
-      const category = doc.data() as Category;
+      const category = { id: doc.id, ...(doc.data() as Category) };
+      // const category = doc.data() as Category;
       category.id = doc.id;
       categories.push(category);
     }
