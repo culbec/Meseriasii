@@ -1,28 +1,24 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import ApiService from './service/ApiService';
 import { useRoute } from '@react-navigation/native';
 
-
 const HomePage = () => {
-  const navigation = useNavigation();  // Initialize navigation
+  const navigation = useNavigation();
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [categories, setCategories] = useState([]);
   const [offers, setOffers] = useState([]);
 
-  // ApiService.setToken(meseriasToken)
-
   const route = useRoute();
   const user = route.params.user;
-  console.log("HomePage User:", user);
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const categoriesData = await ApiService.getCategories()
+        const categoriesData = await ApiService.getCategories();
         setCategories(categoriesData);
-      } catch (err) { 
+      } catch (err) {
         console.error("Error fetching categories: ", err);
       }
     };
@@ -32,9 +28,8 @@ const HomePage = () => {
   useEffect(() => {
     const fetchOffers = async () => {
       try {
-        const offersData = await ApiService.getOffers();  // Adjust this if needed to get all offers
-        console.log("Fetched offers:", offersData);
-        setOffers(offersData);  // Update the state with fetched offers
+        const offersData = await ApiService.getOffers();
+        setOffers(offersData);
       } catch (error) {
         console.error("Error fetching offers: ", error);
       }
@@ -46,116 +41,88 @@ const HomePage = () => {
     const fetchOffersForCategory = async () => {
       if (selectedCategory) {
         try {
-          const offersData = await ApiService.getOffersByCategory(selectedCategory.Name);  // Assume ApiService has this method
-          // console.log("Fetched offers for category:", offersData);
+          const offersData = await ApiService.getOffersByCategory(selectedCategory.Name);
           setOffers(offersData);
         } catch (err) {
           console.error("Error fetching offers: ", err);
         }
-      }
-      else{
-        const offersData = await ApiService.getOffers();  // Adjust this if needed to get all offers
-        console.log("Fetched offers:", offersData);
+      } else {
+        const offersData = await ApiService.getOffers();
         setOffers(offersData);
       }
     };
- 
     fetchOffersForCategory();
-  }, [selectedCategory]);  // Run this effect when selectedCategory changes
+  }, [selectedCategory]);
 
-  // Handle category selection
   const handleCategorySelect = (category) => {
-    if(selectedCategory === category) {
-      setSelectedCategory(null);  // Set selected category to trigger fetching offers
-    } else {
-      setSelectedCategory(category);  // Set selected category to trigger fetching offers
-    }
+    setSelectedCategory(selectedCategory === category ? null : category);
   };
 
   const truncateText = (text, maxLength = 150) => {
-    if (text.length > maxLength) {
-      return text.slice(0, maxLength) + "...";
-    }
-    return text;
+    return text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
   };
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Header Section */}
-      <View style={styles.header}>
-        <Text style={styles.logo}>Meseriasii</Text>
-        <TouchableOpacity 
-          style={styles.profilePicture} 
-          onPress={() => navigation.navigate('profile/PrivateProfileScreen', { user })}
-          // onPress={() => navigation.navigate('auth/Login')}
-        >
-          <Text style={styles.profileText}>P</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Search Section */}
-      <View style={styles.searchSection}>
-        <Text style={styles.slogan}>Profesionisti la un click distanta</Text>
-        <TextInput style={styles.searchBar} placeholder="Search..." />
-      </View>
-
-      {/* Category Bar */}
-      <ScrollView horizontal style={styles.categorySection} showsHorizontalScrollIndicator={false}>
-        {categories.map((category) => (
-          <TouchableOpacity 
-            key={category.id} 
-            style={[styles.category, selectedCategory?.id === category.id && styles.selectedCategory]} 
-            onPress={() => handleCategorySelect(category)}
-          >
-            <Text style={styles.categoryText}>{category.Name}</Text>
-          </TouchableOpacity>
-        ))}
-        <TouchableOpacity style={styles.scrollButton}>
-          <Text style={styles.scrollButtonText}>→</Text>
-        </TouchableOpacity>
-      </ScrollView>
-
-      {/* Offers Section */}
-      <View style={styles.offersMeseriasi}>
-        <Text style={styles.sectionTitle}>Oferte:</Text>
-        {offers.map((offer, index) => (
+      <ScrollView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.logo}>Meseriasii</Text>
           <TouchableOpacity
-            key={offer.id} // Unique key for each offer
-            style={styles.meseriasCard}
-            
-            onPress={() => navigation.navigate('OfferDetailScreen', {
-              selectedOffer: offer,  // Pass offer ID for detailed view
-            }
-          )
-        }
+              style={styles.profilePicture}
+              onPress={() => navigation.navigate('profile/PrivateProfileScreen', { user })}
           >
-            <Text style={styles.offerText}>
-              {truncateText(offer.description || 'No description available')}
-            </Text>
-            <Text style={styles.categoryText}>
-              {offer.category.name} {/* Display category */}
-            </Text>
-            <Text style={styles.startPrice}>de la {offer.start_price} de lei</Text>
+            <Text style={styles.profileText}>P</Text>
           </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Footer Section */}
-      <View style={styles.footer}>
-        <Text style={styles.footerLogo}>Meseriasii</Text>
-        <View style={styles.contactInfo}>
-          <View style={styles.contactItem}>
-            <Text style={styles.contactLabel}>Email:</Text>
-            <Text style={styles.contactText}>nasii.meseriasii@gmail.com</Text>
-          </View>
-          <View style={styles.contactItem}>
-            <Text style={styles.contactLabel}>Phone:</Text>
-            <Text style={styles.contactText}>+07 n am cartela</Text>
-          </View>
         </View>
-        <Text style={styles.footerCopy}>&copy; 2024 Meseriasii. All rights reserved.</Text>
-      </View>
-    </ScrollView>
+
+        <View style={styles.searchSection}>
+          <Text style={styles.slogan}>Profesionisti la un click distanta</Text>
+          <TextInput style={styles.searchBar} placeholder="Caută..." />
+        </View>
+
+        <ScrollView horizontal style={styles.categorySection} showsHorizontalScrollIndicator={false}>
+          {categories.map((category) => (
+              <TouchableOpacity
+                  key={category.id}
+                  style={[styles.category, selectedCategory?.id === category.id && styles.selectedCategory]}
+                  onPress={() => handleCategorySelect(category)}
+              >
+                <Text style={styles.categoryText}>{category.Name}</Text>
+              </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        <View style={styles.offersMeseriasi}>
+          <Text style={styles.sectionTitle}>Oferte:</Text>
+          {offers.map((offer) => (
+              <TouchableOpacity
+                  key={offer.id}
+                  style={styles.meseriasCard}
+                  onPress={() => navigation.navigate('OfferDetailScreen', { selectedOffer: offer })}
+              >
+                <Text style={styles.offerText}>
+                  {truncateText(offer.description || 'Nicio descriere disponibilă')}
+                </Text>
+                <Text style={styles.categoryText}>{offer.category.name}</Text>
+                <Text style={styles.startPrice}>de la {offer.start_price} de lei</Text>
+              </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerLogo}>Meseriasii</Text>
+          <View style={styles.contactInfo}>
+            <View style={styles.contactItem}>
+              <Text style={styles.contactLabel}>Email:</Text>
+              <Text style={styles.contactText}>nasii.meseriasii@gmail.com</Text>
+            </View>
+            <View style={styles.contactItem}>
+              <Text style={styles.contactLabel}>Telefon:</Text>
+              <Text style={styles.contactText}>+07 n am cartela</Text>
+            </View>
+          </View>
+          <Text style={styles.footerCopy}>&copy; 2024 Meseriasii. Toate drepturile rezervate.</Text>
+        </View>
+      </ScrollView>
   );
 };
 
@@ -227,17 +194,8 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
   },
-  scrollButton: {
-    padding: 8,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 8,
-  },
-  scrollButtonText: {
-    fontSize: 16,
-    color: '#4a90e2',
+  selectedCategory: {
+    backgroundColor: '#4CAF50',
   },
   offersMeseriasi: {
     padding: 16,
@@ -258,11 +216,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
-  },
-  meseriasName: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: '#333333',
   },
   offerText: {
     fontSize: 16,
@@ -312,9 +265,6 @@ const styles = StyleSheet.create({
     color: '#cccccc',
     marginTop: 8,
   },
-  selectedCategory: {
-    backgroundColor: '#4CAF50', // Culoare verde pentru selecția categoriei
-  },
 });
 
-export default HomePage;
+export default HomePage
