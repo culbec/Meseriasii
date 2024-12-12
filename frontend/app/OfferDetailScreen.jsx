@@ -34,9 +34,8 @@ const OfferDetailScreen = () => {
   };
 
   const handleMeseriasProfilePress = () => {
-    navigation.navigate('profile/PublicProfileScreen', {
-      meserias: selectedOffer.meserias,
-    });
+    user = selectedOffer.meserias;
+    navigation.navigate('profile/PublicProfileScreen', { user });
   };
 
   if (!selectedOffer) {
@@ -66,6 +65,9 @@ const OfferDetailScreen = () => {
         </View>
 
         {/* Butonul de contact, fixat jos */}
+        <TouchableOpacity style={styles.chatButton} onPress={handleCallPress}>
+          <Text style={styles.buttonText}>Scrie mesaj</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.callButton} onPress={handleCallPress}>
           <Text style={styles.buttonText}>Contactează</Text>
         </TouchableOpacity>
@@ -151,6 +153,22 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 5,
   },
+  chatButton: {
+    position: 'absolute',
+    bottom: 80,
+    left: 16,
+    right: 16,
+    paddingVertical: 12,
+    backgroundColor: '#2980b9',
+    borderRadius: 8,
+    alignItems: 'center',
+    shadowColor: '#2980b9',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+
   buttonText: {
     fontSize: 18,
     color: '#fff',
