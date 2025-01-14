@@ -46,7 +46,7 @@ async function startServer() {
       }
     }
 
-    const {token, user} = await service.login(username, password);
+    const { token, user } = await service.login(username, password);
 
     if (!token) {
       ctx.status = 404;
@@ -270,14 +270,21 @@ async function startServer() {
     } catch (error) {
       log("Error fetching reviews:", error);
       ctx.status = 500;
-      ctx.body = { message: "Could not fetch reviews! Please try again later." };
+      ctx.body = {
+        message: "Could not fetch reviews! Please try again later.",
+      };
     }
   });
 
   router.get("/reviews/stars/:starCount", async (ctx) => {
     const { starCount } = ctx.params;
 
-    if (!starCount || isNaN(Number(starCount)) || Number(starCount) < 1 || Number(starCount) > 5) {
+    if (
+      !starCount ||
+      isNaN(Number(starCount)) ||
+      Number(starCount) < 1 ||
+      Number(starCount) > 5
+    ) {
       ctx.status = 400;
       ctx.body = { message: "Star count must be between 1 and 5." };
       return;
@@ -298,11 +305,13 @@ async function startServer() {
     } catch (error) {
       log("Error fetching reviews by star count:", error);
       ctx.status = 500;
-      ctx.body = { message: "Could not fetch reviews! Please try again later." };
+      ctx.body = {
+        message: "Could not fetch reviews! Please try again later.",
+      };
     }
   });
 
-// Add a review
+  // Add a review
   router.post("/reviews", async (ctx) => {
     const body = await CoBody.json(ctx);
     const { meserias, stars, text, user } = body;
@@ -323,7 +332,9 @@ async function startServer() {
     } catch (error) {
       log("Error adding review:", error);
       ctx.status = 500;
-      ctx.body = { message: "Could not add the review! Please try again later." };
+      ctx.body = {
+        message: "Could not add the review! Please try again later.",
+      };
     }
   });
 
