@@ -1,219 +1,270 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';  
-import { firebase_db } from '../firebaseConfig';  
-import { getDocs, collection } from 'firebase/firestore'; 
+import { useNavigation } from '@react-navigation/native';
+import ApiService from './service/ApiService';
+import { useRoute } from '@react-navigation/native';
 
 const HomePage = () => {
-  const navigation = useNavigation();  // Initialize navigation
+  const navigation = useNavigation();
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [offers, setOffers] = useState([]);
+
+  const route = useRoute();
+  const user = route.params.user;
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const snapshot = await getDocs(collection(firebase_db, 'categories'));
-        const documents = snapshot.docs.map(doc => ({
-            id: doc.id,  
-            ...doc.data() 
-          }));
-          
-          setCategories(documents)
-      } catch (error) {
-        console.error("Error fetching categories: ", error);
+        const categoriesData = await ApiService.getCategories();
+        setCategories(categoriesData);
+      } catch (err) {
+        console.error("Error fetching categories: ", err);
       }
     };
-
     fetchCategories();
   }, []);
 
+  useEffect(() => {
+    const fetchOffers = async () => {
+      try {
+        const offersData = await ApiService.getOffers();
+        setOffers(offersData);
+      } catch (error) {
+        console.error("Error fetching offers: ", error);
+      }
+    };
+    fetchOffers();
+  }, []);
+
+  useEffect(() => {
+    const fetchOffersForCategory = async () => {
+      if (selectedCategory) {
+        try {
+          const offersData = await ApiService.getOffersByCategory(selectedCategory.Name);
+          setOffers(offersData);
+        } catch (err) {
+          console.error("Error fetching offers: ", err);
+        }
+      } else {
+        const offersData = await ApiService.getOffers();
+        setOffers(offersData);
+      }
+    };
+    fetchOffersForCategory();
+  }, [selectedCategory]);
+
+  const handleCategorySelect = (category) => {
+    setSelectedCategory(selectedCategory === category ? null : category);
+  };
+
+  const truncateText = (text, maxLength = 150) => {
+    return text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
+  };
+
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.logo}>Meseriasii</Text>
-        {/* Profile picture button */}
-        <TouchableOpacity 
-          style={styles.profilePicture}
-          onPress={() => navigation.navigate('Login')}  // Navigate to Login screen
-        >
-          <Text style={styles.profileText}>P</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Search Section */}
-      <View style={styles.searchSection}>
-      <Text style={styles.slogan}>Slogan...ceva emotionant</Text>
-        <TextInput style={styles.searchBar} placeholder="Search..." />
-      </View>
-
-      {/* Category Bar */}
-      <View style={styles.categorySection}>
-        {/* Category Bar */}
-        <ScrollView horizontal style={styles.categoryBar} showsHorizontalScrollIndicator={false}>
-          {categories.map((category) => (
-            <View key={category.id} style={styles.category}>
-              <Text style={styles.categoryText}>{category.Name}</Text>
-            </View>
-          ))}
-          <TouchableOpacity style={styles.scrollButton}>
-            <Text style={styles.scrollButtonText}>→</Text>
+      <ScrollView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.logo}>Meseriasii</Text>
+          <TouchableOpacity
+              style={styles.profilePicture}
+              onPress={() => navigation.navigate('profile/PrivateProfileScreen', { user })}
+          >
+            <Text style={styles.profileText}>P</Text>
           </TouchableOpacity>
-        </ScrollView>
-      </View>
+        </View>
 
-      {/* Promoted Users Section */}
-      <View style={styles.promotedUsers}>
-        <Text style={styles.sectionTitle}>Promovati:</Text>
-        { /* Placeholder user cards */}
-        {Array.from({ length: 3 }).map((_, index) => (
-          <View key={index} style={styles.userCard}>
-            <View style={styles.userPhotoPlaceholder}>
-              <Text>Photo</Text>
+        <View style={styles.searchSection}>
+          <Text style={styles.slogan}>Profesionisti la un click distanta</Text>
+          <TextInput style={styles.searchBar} placeholder="Caută..." />
+        </View>
+
+        <ScrollView horizontal style={styles.categorySection} showsHorizontalScrollIndicator={false}>
+          {categories.map((category) => (
+              <TouchableOpacity
+                  key={category.id}
+                  style={[styles.category, selectedCategory?.id === category.id && styles.selectedCategory]}
+                  onPress={() => handleCategorySelect(category)}
+              >
+                <Text style={styles.categoryText}>{category.Name}</Text>
+              </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        <View style={styles.offersMeseriasi}>
+          <Text style={styles.sectionTitle}>Oferte:</Text>
+          {offers.map((offer) => (
+              <TouchableOpacity
+                  key={offer.id}
+                  style={styles.meseriasCard}
+                  onPress={() => navigation.navigate('OfferDetailScreen', { selectedOffer: offer })}
+              >
+                <Text style={styles.offerText}>
+                  {truncateText(offer.description || 'Nicio descriere disponibilă')}
+                </Text>
+                <Text style={styles.categoryText}>{offer.category.name}</Text>
+                <Text style={styles.startPrice}>de la {offer.start_price} de lei</Text>
+              </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerLogo}>Meseriasii</Text>
+          <View style={styles.contactInfo}>
+            <View style={styles.contactItem}>
+              <Text style={styles.contactLabel}>Email:</Text>
+              <Text style={styles.contactText}>nasii.meseriasii@gmail.com</Text>
             </View>
-            <View style={styles.userRating}>
-              <Text style={styles.stars}>★★★★☆</Text>
-              <Text style={styles.reviews}>4.25/5 (1241 reviews)</Text>
+            <View style={styles.contactItem}>
+              <Text style={styles.contactLabel}>Telefon:</Text>
+              <Text style={styles.contactText}>+07 n am cartela</Text>
             </View>
           </View>
-        ))}
-      </View>
-
-      {/* Footer */}
-      <View style={styles.footer}>
-        <View style={styles.contactInfo}>
-          <Text>Email: example@example.com</Text>
-          <Text>Phone: +123456789</Text>
+          <Text style={styles.footerCopy}>&copy; 2024 Meseriasii. Toate drepturile rezervate.</Text>
         </View>
-        <Text style={styles.footerLogo}>Placeholder Logo</Text>
-      </View>
-    </View>
+      </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 10,
-    backgroundColor: '#fff',
+    backgroundColor: '#f7f9fc',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
+    padding: 16,
+    backgroundColor: '#4a90e2',
+    borderBottomWidth: 1,
+    borderBottomColor: '#d4d4d4',
+    elevation: 2,
   },
   logo: {
     fontSize: 24,
     fontWeight: 'bold',
+    color: '#ffffff',
   },
   profilePicture: {
     width: 40,
     height: 40,
-    borderRadius: 20,         
-    backgroundColor: '#ddd', 
-    alignItems: 'center',
+    borderRadius: 20,
+    backgroundColor: '#e2e2e2',
     justifyContent: 'center',
+    alignItems: 'center',
   },
   profileText: {
-    fontSize: 18,
-    color: '#777',
+    fontSize: 16,
+    color: '#4a90e2',
   },
   searchSection: {
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  searchBar: {
-    height: 40,
-    width: '80%',
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 15,
+    padding: 16,
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eeeeee',
   },
   slogan: {
-    marginTop: 8,
-    marginBottom: 8,
+    fontSize: 20,
+    fontWeight: 'bold',
+    fontStyle: 'italic',
+    color: '#222',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  searchBar: {
+    padding: 12,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
     fontSize: 16,
-    color: '#777',
   },
   categorySection: {
-    height: 140,
-  },
-  categoryBar: {
-    height: 10,
-    flexDirection: 'row',
-    paddingVertical: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    backgroundColor: '#eaf0f9',
   },
   category: {
-    width: 120,
-    height: 120,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: '#f3f3f3',
-    borderRadius: 8,
-    marginRight: 10,
+    marginHorizontal: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#4a90e2',
+    borderRadius: 20,
   },
-  scrollButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-  },
-  scrollButtonText: {
-    fontSize: 18,
-  },
-  promotedUsers: {
-    marginVertical: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  userCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    borderBottomColor: '#ddd',
-    borderBottomWidth: 1,
-  },
-  userPhotoPlaceholder: {
-    width: 50,
-    height: 50,
-    backgroundColor: '#eee',
-    borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  userRating: {
-    flex: 1,
-    alignItems: 'flex-end',
-    paddingLeft: 10,
-  },
-  stars: {
-    color: 'gold',
+  categoryText: {
+    color: '#ffffff',
     fontSize: 16,
   },
-  reviews: {
-    fontSize: 12,
-    color: '#777',
+  selectedCategory: {
+    backgroundColor: '#4CAF50',
+  },
+  offersMeseriasi: {
+    padding: 16,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: '#4a90e2',
+    marginBottom: 12,
+  },
+  meseriasCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  offerText: {
+    fontSize: 16,
+    color: '#666666',
+    marginVertical: 8,
+  },
+  startPrice: {
+    fontSize: 16,
+    color: '#4a90e2',
   },
   footer: {
-    borderTopColor: '#ddd',
+    paddingVertical: 20,
+    backgroundColor: '#4a90e2',
     borderTopWidth: 1,
-    paddingTop: 10,
+    borderTopColor: '#d4d4d4',
     alignItems: 'center',
-  },
-  contactInfo: {
-    alignItems: 'center',
-    fontSize: 12,
-    color: '#777',
+    justifyContent: 'center',
   },
   footerLogo: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 12,
+  },
+  contactInfo: {
+    marginBottom: 16,
+    width: '80%',
+    alignItems: 'center',
+  },
+  contactItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 4,
+  },
+  contactLabel: {
+    fontSize: 16,
+    color: '#ffffff',
+    fontWeight: '500',
+    marginRight: 8,
+  },
+  contactText: {
+    fontSize: 16,
+    color: '#f0f0f0',
+  },
+  footerCopy: {
     fontSize: 14,
-    color: '#777',
-    marginTop: 10,
+    color: '#cccccc',
+    marginTop: 8,
   },
 });
 
-export default HomePage;
+export default HomePage

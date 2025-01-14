@@ -94,17 +94,16 @@ export default class Service {
     return this.loggedInUsers.has(token);
   }
 
-  /**
-   * Gets the offers from the OffersRepository instance
-   * @param meserias_id The id of the meserias to get the offers for
-   * @returns The offers if the operation was successful, an empty array otherwise
-   * @throws Error if the operation couldn't be completed
-   */
-  public async getOffers(meserias_id?: string) {
+  public async getOffers(meserias_id?: string ,categoryName?:string) {
     try {
       if (meserias_id) {
         return this.offersRepo.getMeseriasOffers(meserias_id);
-      } else {
+
+      }
+      else if(categoryName){
+        return this.offersRepo.getOffersByCategoryName(categoryName);
+      }
+       else {
         return this.offersRepo.getOffers();
       }
     } catch (error) {
@@ -113,26 +112,7 @@ export default class Service {
     }
   }
 
-  /**
-   * Adds the offer to the OffersRepository instance
-   * @param offer The offer to be added
-   * @throws Error if the operation couldn't be completed
-   */
-  public async addOffer(offer: OfferRequest) {
-    try {
-      await this.offersRepo.addOffer(offer);
-    } catch (error) {
-      this.log("Error adding offer", error);
-      throw new Error("Couldn't add offer!");
-    }
-  }
 
-  /**
-   * Retrieves the user with the given id from the UserRepository instance
-   * @param userId The id of the user
-   * @returns The user if the operation was successful, an empty object otherwise
-   * @throws Error if the operation couldn't be completed
-   */
   public async getUserById(userId: string) {
     try {
       return await this.userRepo.getUserById(userId);
@@ -176,7 +156,14 @@ export default class Service {
       throw new Error("Couldn't change password!");
     }
   }
-
+  public async addOffer(offer: OfferRequest) {
+    try {
+      await this.offersRepo.addOffer(offer);
+    } catch (error) {
+      this.log("Error adding offer", error);
+      throw new Error("Couldn't add offer!");
+    }
+  }
   /**
    * Gets the categories from the CategoryRepository instance
    * @returns The categories if the operation was successful, an empty array otherwise

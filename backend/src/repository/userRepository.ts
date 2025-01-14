@@ -12,7 +12,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../utils/firebaseConfig";
 
-// import { compare, genSalt, getSalt, hash } from "bcrypt-ts";
+import { compare, genSalt, getSalt, hash } from "bcrypt-ts";
 let bcrypt_ts: typeof import("bcrypt-ts");
 
 import { getLogger } from "../utils/utils";
@@ -204,3 +204,4 @@ export class UserRepository {
     return Promise.resolve();
   }
 }
+

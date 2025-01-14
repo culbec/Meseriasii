@@ -82,16 +82,13 @@ class Service {
     checkLoggedIn(token) {
         return this.loggedInUsers.has(token);
     }
-    /**
-     * Gets the offers from the OffersRepository instance
-     * @param meserias_id The id of the meserias to get the offers for
-     * @returns The offers if the operation was successful, an empty array otherwise
-     * @throws Error if the operation couldn't be completed
-     */
-    async getOffers(meserias_id) {
+    async getOffers(meserias_id, categoryName) {
         try {
             if (meserias_id) {
                 return this.offersRepo.getMeseriasOffers(meserias_id);
+            }
+            else if (categoryName) {
+                return this.offersRepo.getOffersByCategoryName(categoryName);
             }
             else {
                 return this.offersRepo.getOffers();
@@ -102,26 +99,6 @@ class Service {
             throw new Error("Couldn't get offers!");
         }
     }
-    /**
-     * Adds the offer to the OffersRepository instance
-     * @param offer The offer to be added
-     * @throws Error if the operation couldn't be completed
-     */
-    async addOffer(offer) {
-        try {
-            await this.offersRepo.addOffer(offer);
-        }
-        catch (error) {
-            this.log("Error adding offer", error);
-            throw new Error("Couldn't add offer!");
-        }
-    }
-    /**
-     * Retrieves the user with the given id from the UserRepository instance
-     * @param userId The id of the user
-     * @returns The user if the operation was successful, an empty object otherwise
-     * @throws Error if the operation couldn't be completed
-     */
     async getUserById(userId) {
         try {
             return await this.userRepo.getUserById(userId);
@@ -160,6 +137,15 @@ class Service {
         catch (error) {
             this.log("Error changing password", error);
             throw new Error("Couldn't change password!");
+        }
+    }
+    async addOffer(offer) {
+        try {
+            await this.offersRepo.addOffer(offer);
+        }
+        catch (error) {
+            this.log("Error adding offer", error);
+            throw new Error("Couldn't add offer!");
         }
     }
     /**

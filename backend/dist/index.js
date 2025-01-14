@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const koa_1 = __importDefault(require("koa"));
 const koa_router_1 = __importDefault(require("koa-router"));
+const cors_1 = __importDefault(require("@koa/cors"));
 const koa_logger_1 = __importDefault(require("koa-logger"));
 const koa_json_1 = __importDefault(require("koa-json"));
 const co_body_1 = __importDefault(require("co-body"));
@@ -12,6 +13,7 @@ const service_1 = __importDefault(require("./service/service"));
 const authMiddleware_1 = require("./auth/authMiddleware");
 const utils_1 = require("./utils/utils");
 const app = new koa_1.default();
+app.use((0, cors_1.default)());
 const router = new koa_router_1.default();
 const service = new service_1.default();
 const log = (0, utils_1.getLogger)("Server");
@@ -211,6 +213,7 @@ async function startServer() {
         ctx.status = 200;
         ctx.body = { categories };
     });
+  
     log("Setup categories route\n");
     router.get("/reviews", async (ctx) => {
         log("GET /reviews called"); // Add this log
@@ -278,6 +281,47 @@ async function startServer() {
         }
     });
     log("Setup review routes");
+  
+    router.get("/offers/category/:categoryName", async (ctx) => {
+        const { categoryName } = ctx.params; // Extract the category name from the route parameters
+        log(`Fetching offers for category: ${categoryName}`);
+        try {
+            const offers = await service.getOffers(undefined, categoryName); // Call the service method
+            log("offers", offers);
+            if (!offers || offers.length === 0) {
+                ctx.status = 404;
+                ctx.body = { message: "No offers found for the specified category." };
+                return;
+            }
+            ctx.status = 200;
+            ctx.body = { offers };
+        }
+        catch (error) {
+            log("Error fetching offers by category:", error);
+            ctx.status = 500;
+            ctx.body = { message: "Could not fetch offers! Please try again later." };
+        }
+    });
+    router.get("/offers", async (ctx) => {
+        log(`Fetching offers`);
+        try {
+            const offers = await service.getOffers(); // Call the service method
+            log("offers", offers);
+            if (!offers || offers.length === 0) {
+                ctx.status = 404;
+                ctx.body = { message: "No offers found for the specified category." };
+                return;
+            }
+            ctx.status = 200;
+            ctx.body = { offers };
+        }
+        catch (error) {
+            log("Error fetching offers by category:", error);
+            ctx.status = 500;
+            ctx.body = { message: "Could not fetch offers! Please try again later." };
+        }
+    });
+  
     app.use((0, koa_logger_1.default)());
     app.use((0, koa_json_1.default)());
     app.use(router.routes()).use(router.allowedMethods());
