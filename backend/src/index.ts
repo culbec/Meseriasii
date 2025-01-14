@@ -253,6 +253,82 @@ async function startServer() {
   });
   log("Setup categories route\n");
 
+  router.get("/reviews", async (ctx) => {
+    log("GET /reviews called"); // Add this log
+    try {
+      const reviews = await service.getReviews();
+      log("reviews", reviews);
+
+      if (!reviews || reviews.length === 0) {
+        ctx.status = 404;
+        ctx.body = { message: "No reviews found!" };
+        return;
+      }
+
+      ctx.status = 200;
+      ctx.body = { reviews };
+    } catch (error) {
+      log("Error fetching reviews:", error);
+      ctx.status = 500;
+      ctx.body = { message: "Could not fetch reviews! Please try again later." };
+    }
+  });
+
+  router.get("/reviews/stars/:starCount", async (ctx) => {
+    const { starCount } = ctx.params;
+
+    if (!starCount || isNaN(Number(starCount)) || Number(starCount) < 1 || Number(starCount) > 5) {
+      ctx.status = 400;
+      ctx.body = { message: "Star count must be between 1 and 5." };
+      return;
+    }
+
+    try {
+      const reviews = await service.getReviewsByStarCount(Number(starCount));
+      log(`reviews with ${starCount} stars`, reviews);
+
+      if (!reviews || reviews.length === 0) {
+        ctx.status = 404;
+        ctx.body = { message: `No reviews found with ${starCount} stars.` };
+        return;
+      }
+
+      ctx.status = 200;
+      ctx.body = { reviews };
+    } catch (error) {
+      log("Error fetching reviews by star count:", error);
+      ctx.status = 500;
+      ctx.body = { message: "Could not fetch reviews! Please try again later." };
+    }
+  });
+
+// Add a review
+  router.post("/reviews", async (ctx) => {
+    const body = await CoBody.json(ctx);
+    const { meserias, stars, text, user } = body;
+
+    if (!meserias || !user || typeof stars !== "number" || !text) {
+      ctx.status = 400;
+      ctx.body = { message: "Invalid request. All fields are required." };
+      return;
+    }
+
+    try {
+      const review = { meserias, stars, text, user };
+      const reviewId = await service.addReview(review);
+      log("Added review with ID:", reviewId);
+
+      ctx.status = 201;
+      ctx.body = { message: "Review added successfully!", id: reviewId };
+    } catch (error) {
+      log("Error adding review:", error);
+      ctx.status = 500;
+      ctx.body = { message: "Could not add the review! Please try again later." };
+    }
+  });
+
+  log("Setup review routes");
+
   app.use(KoaLogger());
   app.use(json());
 
