@@ -302,9 +302,28 @@ async function startServer() {
     }
   });
 
+  router.get("/reviews/average/:id", async (ctx) => {
+    const { id } = ctx.params;
+    try {
+        const averageReview = await service.getAverageReview(id);
+        log(averageReview)
+        if (averageReview === null) {
+            ctx.status = 404;
+            ctx.body = { message: "No reviews found for this meserias." };
+            return;
+        }
 
-
-
+        ctx.status = 200;
+        ctx.body = { averageReview };
+        log(averageReview)
+    } catch (error) {
+        log("Error fetching average review:", error);
+        ctx.status = 500;
+        ctx.body = {
+            message: "Could not fetch the average review! Please try again later.",
+        };
+    }
+  });
 
   router.get("/reviews", async (ctx) => {
     log("GET /reviews called"); // Add this log
@@ -329,41 +348,6 @@ async function startServer() {
     }
   });
 
-  router.get("/reviews/stars/:starCount", async (ctx) => {
-    const { starCount } = ctx.params;
-
-    if (
-      !starCount ||
-      isNaN(Number(starCount)) ||
-      Number(starCount) < 1 ||
-      Number(starCount) > 5
-    ) {
-      ctx.status = 400;
-      ctx.body = { message: "Star count must be between 1 and 5." };
-      return;
-    }
-
-    try {
-      const reviews = await service.getReviewsByStarCount(Number(starCount));
-      log(`reviews with ${starCount} stars`, reviews);
-
-      if (!reviews || reviews.length === 0) {
-        ctx.status = 404;
-        ctx.body = { message: `No reviews found with ${starCount} stars.` };
-        return;
-      }
-
-      ctx.status = 200;
-      ctx.body = { reviews };
-    } catch (error) {
-      log("Error fetching reviews by star count:", error);
-      ctx.status = 500;
-      ctx.body = {
-        message: "Could not fetch reviews! Please try again later.",
-      };
-    }
-  });
-
   // Add a review
   router.post("/reviews", async (ctx) => {
     const body = await CoBody.json(ctx);
@@ -377,7 +361,7 @@ async function startServer() {
 
     try {
       const review = { meserias, stars, text, user };
-      const reviewId = await service.addReview(review);
+      const reviewId = await service.addReview(meserias, review);
       log("Added review with ID:", reviewId);
 
       ctx.status = 201;
