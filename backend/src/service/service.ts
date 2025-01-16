@@ -3,11 +3,13 @@ import { OfferRequest, OffersRepository } from "../repository/offersRepository";
 import { CategoryRepository } from "../repository/categoryRepository";
 import { getLogger } from "../utils/utils";
 import AuthManager from "../auth/authManager";
+import { Review, ReviewRepository } from "../repository/reviewRepository";
 
 export default class Service {
   private userRepo: UserRepository = new UserRepository();
   private offersRepo: OffersRepository = new OffersRepository();
   private categoryRepo: CategoryRepository = new CategoryRepository();
+  private reviewRepo: ReviewRepository = new ReviewRepository();
 
   private authManager: AuthManager = new AuthManager();
   private loggedInUsers: Map<string, User> = new Map<string, User>();
@@ -35,7 +37,7 @@ export default class Service {
   public async login(
     username: string,
     password: string
-  ): Promise<{token: string | undefined, user: User | undefined}> {
+  ): Promise<{ token: string | undefined; user: User | undefined }> {
     let token: string | undefined = undefined;
     let user: User | undefined = undefined;
 
@@ -50,7 +52,7 @@ export default class Service {
       this.log("Error logging in", error);
     }
 
-    return {token, user};
+    return { token, user };
   }
 
   /**
@@ -142,7 +144,11 @@ export default class Service {
    * @param newPassword The new password
    * @throws Error if the operation couldn't be completed
    */
-  public async changePassword(userId: string, oldPassword: string, newPassword: string) {
+  public async changePassword(
+    userId: string,
+    oldPassword: string,
+    newPassword: string
+  ) {
     try {
       await this.userRepo.changePassword(userId, oldPassword, newPassword);
     } catch (error) {
@@ -164,5 +170,44 @@ export default class Service {
    */
   public async getCategories() {
     return this.categoryRepo.getCategories();
+  }
+
+  public async getReviews(): Promise<Review[] | undefined> {
+    try {
+      return await this.reviewRepo.getReviews();
+    } catch (error) {
+      this.log("Error getting reviews", error);
+      throw new Error("Couldn't get reviews!");
+    }
+  }
+
+  /**
+   * Fetches reviews by star count.
+   * @param starCount The star count to filter by.
+   * @returns A list of reviews matching the star count or undefined.
+   */
+  public async getReviewsByStarCount(
+    starCount: number
+  ): Promise<Review[] | undefined> {
+    try {
+      return await this.reviewRepo.getReviewsByStarCount(starCount);
+    } catch (error) {
+      this.log(`Error getting reviews with ${starCount} stars`, error);
+      throw new Error(`Couldn't get reviews with ${starCount} stars!`);
+    }
+  }
+
+  /**
+   * Adds a new review.
+   * @param review The review object to add.
+   * @returns The ID of the newly added review.
+   */
+  public async addReview(review: Review): Promise<string> {
+    try {
+      return await this.reviewRepo.addReview(review);
+    } catch (error) {
+      this.log("Error adding review", error);
+      throw new Error("Couldn't add the review!");
+    }
   }
 }

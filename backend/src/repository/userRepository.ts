@@ -66,17 +66,16 @@ export class UserRepository {
     const user = userDoc.data() as UserPrivate;
     user.id = userDoc.id;
 
-
     if (!bcrypt_ts) {
       bcrypt_ts = await import("bcrypt-ts");
     }
     // retrieve the salt from the password
     // and rehash the password with that salt
-    const passwordSalt = getSalt(user.password);
-    const passwordHash = await hash(password, passwordSalt);
+    const passwordSalt = bcrypt_ts.getSalt(user.password);
+    const passwordHash = await bcrypt_ts.hash(password, passwordSalt);
 
     // compare the password hashes
-    const isPasswordValid = await compare(password, passwordHash);
+    const isPasswordValid = await bcrypt_ts.compare(password, passwordHash);
     return isPasswordValid ? user : undefined;
   }
 
@@ -89,14 +88,12 @@ export class UserRepository {
    * @throws Error if the user couldn't be registered
    */
   public async register(user: User, password: string): Promise<void> {
-
     if (!bcrypt_ts) {
       bcrypt_ts = await import("bcrypt-ts");
     }
 
     const salt = await bcrypt_ts.genSalt(saltRounds);
     const hashedPassword = await bcrypt_ts.hash(password, salt);
-
 
     user.date = new Date().toUTCString();
     user.version = 1;
@@ -147,12 +144,11 @@ export class UserRepository {
    */
   public async updateUser(user: User): Promise<User> {
     const userRef = doc(this.usersCollection, user.id);
-    
+
     user.date = new Date().toUTCString();
     user.version += 1;
 
     const { id, ...updateData } = user;
-
 
     await updateDoc(userRef, updateData).catch((error) => {
       this.log("Error updating document: ", error);

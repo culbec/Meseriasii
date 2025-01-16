@@ -8,11 +8,13 @@ const offersRepository_1 = require("../repository/offersRepository");
 const categoryRepository_1 = require("../repository/categoryRepository");
 const utils_1 = require("../utils/utils");
 const authManager_1 = __importDefault(require("../auth/authManager"));
+const reviewRepository_1 = require("../repository/reviewRepository");
 class Service {
     constructor() {
         this.userRepo = new userRepository_1.UserRepository();
         this.offersRepo = new offersRepository_1.OffersRepository();
         this.categoryRepo = new categoryRepository_1.CategoryRepository();
+        this.reviewRepo = new reviewRepository_1.ReviewRepository();
         this.authManager = new authManager_1.default();
         this.loggedInUsers = new Map();
         this.log = (0, utils_1.getLogger)("Service");
@@ -152,6 +154,43 @@ class Service {
      */
     async getCategories() {
         return this.categoryRepo.getCategories();
+    }
+    async getReviews() {
+        try {
+            return await this.reviewRepo.getReviews();
+        }
+        catch (error) {
+            this.log("Error getting reviews", error);
+            throw new Error("Couldn't get reviews!");
+        }
+    }
+    /**
+     * Fetches reviews by star count.
+     * @param starCount The star count to filter by.
+     * @returns A list of reviews matching the star count or undefined.
+     */
+    async getReviewsByStarCount(starCount) {
+        try {
+            return await this.reviewRepo.getReviewsByStarCount(starCount);
+        }
+        catch (error) {
+            this.log(`Error getting reviews with ${starCount} stars`, error);
+            throw new Error(`Couldn't get reviews with ${starCount} stars!`);
+        }
+    }
+    /**
+     * Adds a new review.
+     * @param review The review object to add.
+     * @returns The ID of the newly added review.
+     */
+    async addReview(review) {
+        try {
+            return await this.reviewRepo.addReview(review);
+        }
+        catch (error) {
+            this.log("Error adding review", error);
+            throw new Error("Couldn't add the review!");
+        }
     }
 }
 exports.default = Service;
