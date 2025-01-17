@@ -297,6 +297,15 @@ class ApiService {
       const response: AxiosResponse<{ offer: OfferRequest }> = await axios.put(
         `${BASE_URL}/offers`,
         offer,
+  /**
+ * Get the average review score for a specific user.
+ * @param userId The ID of the user for whom the average review score is to be fetched.
+ * @returns The average review score or null if no reviews exist.
+ */
+  async getAverageReviewForUser(userId: string): Promise<number> {
+    try {
+      const response: AxiosResponse<{ averageReview: number }> = await axios.get(
+        `${BASE_URL}/reviews/average/${userId}`,
         {
           headers: { Authorization: `Bearer ${this.token}` },
         }
@@ -340,6 +349,46 @@ class ApiService {
       throw new Error("Couldn't filter offers!");
     }
   }
+      console.log(response)
+      return response.data.averageReview;
+    } catch (error) {
+      console.error("Error fetching average review for user:", error);
+      throw new Error("Couldn't fetch the average review for the user!");
+    }
+  }
+
+  /**
+ * Submit a review for a specific user (meserias).
+ * @param meseriasId The ID of the meserias (user) receiving the review.
+ * @param stars The rating (number of stars).
+ * @param text The content of the review.
+ * @returns A promise that resolves with the response from the API.
+  */
+  async submitReview(meseriasId: string, stars: number, text: string): Promise<any> {
+  if (!this.token) {
+    throw new Error("User is not logged in.");
+  }
+
+  try {
+    const response: AxiosResponse<{ message: string, id: string }> = await axios.post(
+      `${BASE_URL}/reviews`,
+      {
+        meserias: meseriasId,  
+        stars,                 
+        text,                  
+        user: this.token,      
+      },
+      {
+        headers: { Authorization: `Bearer ${this.token}` },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error submitting review:", error);
+    throw new Error("Could not submit review! Please try again later.");
+  }
+  }
 }
+
 
 export default new ApiService();

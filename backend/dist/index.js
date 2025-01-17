@@ -313,6 +313,83 @@ async function startServer() {
     });
     router.get("/reviews", async (ctx) => {
         log("GET /reviews called"); // Add this log
+
+        try {
+            const offers = await service.getOffers(undefined, categoryName); // Call the service method
+            log("offers", offers);
+            if (!offers || offers.length === 0) {
+                ctx.status = 404;
+                ctx.body = { message: "No offers found for the specified category." };
+                return;
+            }
+            ctx.status = 200;
+            ctx.body = { offers };
+        }
+        catch (error) {
+            log("Error fetching offers by category:", error);
+            ctx.status = 500;
+            ctx.body = {
+                message: "Could not fetch reviews! Please try again later.",
+            };
+        }
+    });
+    router.get("/reviews/stars/:starCount", async (ctx) => {
+        const { starCount } = ctx.params;
+        if (!starCount ||
+            isNaN(Number(starCount)) ||
+            Number(starCount) < 1 ||
+            Number(starCount) > 5) {
+            ctx.status = 400;
+            ctx.body = { message: "Star count must be between 1 and 5." };
+            return;
+
+            ctx.body = { message: "Could not fetch offers! Please try again later." };
+        }
+    });
+    router.get("/offers", async (ctx) => {
+        log(`Fetching offers`);
+        try {
+            const offers = await service.getOffers(); // Call the service method
+            log("offers", offers);
+            if (!offers || offers.length === 0) {
+                ctx.status = 404;
+                ctx.body = { message: "No offers found for the specified category." };
+                return;
+            }
+            ctx.status = 200;
+            ctx.body = { offers };
+
+        }
+        catch (error) {
+            log("Error fetching offers by category:", error);
+            ctx.status = 500;
+            ctx.body = { message: "Could not fetch offers! Please try again later." };
+        }
+    });
+    router.get("/reviews/average/:id", async (ctx) => {
+        const { id } = ctx.params;
+        try {
+            const averageReview = await service.getAverageReview(id);
+            log(averageReview);
+            if (averageReview === null) {
+                ctx.status = 404;
+                ctx.body = { message: "No reviews found for this meserias." };
+                return;
+            }
+            ctx.status = 200;
+            ctx.body = { averageReview };
+            log(averageReview);
+        }
+        catch (error) {
+            log("Error fetching average review:", error);
+            ctx.status = 500;
+            ctx.body = {
+                message: "Could not fetch the average review! Please try again later.",
+            };
+        }
+    });
+    router.get("/reviews", async (ctx) => {
+        log("GET /reviews called"); // Add this log
         try {
             const reviews = await service.getReviews();
             log("reviews", reviews);
@@ -332,35 +409,6 @@ async function startServer() {
             };
         }
     });
-    router.get("/reviews/stars/:starCount", async (ctx) => {
-        const { starCount } = ctx.params;
-        if (!starCount ||
-            isNaN(Number(starCount)) ||
-            Number(starCount) < 1 ||
-            Number(starCount) > 5) {
-            ctx.status = 400;
-            ctx.body = { message: "Star count must be between 1 and 5." };
-            return;
-        }
-        try {
-            const reviews = await service.getReviewsByStarCount(Number(starCount));
-            log(`reviews with ${starCount} stars`, reviews);
-            if (!reviews || reviews.length === 0) {
-                ctx.status = 404;
-                ctx.body = { message: `No reviews found with ${starCount} stars.` };
-                return;
-            }
-            ctx.status = 200;
-            ctx.body = { reviews };
-        }
-        catch (error) {
-            log("Error fetching reviews by star count:", error);
-            ctx.status = 500;
-            ctx.body = {
-                message: "Could not fetch reviews! Please try again later.",
-            };
-        }
-    });
     // Add a review
     router.post("/reviews", async (ctx) => {
         const body = await co_body_1.default.json(ctx);
@@ -372,7 +420,7 @@ async function startServer() {
         }
         try {
             const review = { meserias, stars, text, user };
-            const reviewId = await service.addReview(review);
+            const reviewId = await service.addReview(meserias, review);
             log("Added review with ID:", reviewId);
             ctx.status = 201;
             ctx.body = { message: "Review added successfully!", id: reviewId };
@@ -386,6 +434,7 @@ async function startServer() {
         }
     });
     log("Setup review routes\n");
+    log("Setup review routes");
     app.use((0, koa_logger_1.default)());
     app.use((0, koa_json_1.default)());
     app.use(router.routes()).use(router.allowedMethods());

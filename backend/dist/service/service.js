@@ -210,18 +210,13 @@ class Service {
             throw new Error("Couldn't get reviews!");
         }
     }
-    /**
-     * Fetches reviews by star count.
-     * @param starCount The star count to filter by.
-     * @returns A list of reviews matching the star count or undefined.
-     */
-    async getReviewsByStarCount(starCount) {
+    async getAverageReview(userId) {
         try {
-            return await this.reviewRepo.getReviewsByStarCount(starCount);
+            return await this.reviewRepo.getAverageReviewForUser(userId);
         }
         catch (error) {
-            this.log(`Error getting reviews with ${starCount} stars`, error);
-            throw new Error(`Couldn't get reviews with ${starCount} stars!`);
+            this.log("Error getting average review", error);
+            throw new Error("Couldn't fetch average review!");
         }
     }
     /**
@@ -229,9 +224,9 @@ class Service {
      * @param review The review object to add.
      * @returns The ID of the newly added review.
      */
-    async addReview(review) {
+    async addReview(meseriasId, review) {
         try {
-            return await this.reviewRepo.addReview(review);
+            return await this.reviewRepo.addReview(meseriasId, review);
         }
         catch (error) {
             this.log("Error adding review", error);
