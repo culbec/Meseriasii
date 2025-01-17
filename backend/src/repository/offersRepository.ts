@@ -8,6 +8,8 @@ import {
   addDoc,
   query,
   where,
+  updateDoc,
+  deleteDoc,
 } from "firebase/firestore";
 import { db } from "../utils/firebaseConfig";
 import { Category } from "./categoryRepository";
@@ -15,12 +17,17 @@ import { User } from "./userRepository";
 import { getLogger } from "../utils/utils";
 import { CategoryRepository } from "./categoryRepository";
 
-interface Offer {
+export interface Offer {
   id?: string;
   meserias: User;
   category: Category;
   description: string;
   start_price: number;
+}
+
+export interface OfferFilters {
+  county?: string;
+  category_name?: string;
 }
 
 export interface OfferRequest {
@@ -54,13 +61,14 @@ export class OffersRepository {
       const categoryRef = data.category as DocumentReference<Category>;
       const categoryDoc = await getDoc(categoryRef);
       // const category = categoryDoc.data() as Category;
-      const category = { id: categoryDoc.id, ...(categoryDoc.data() as Category) };
-
+      const category = {
+        id: categoryDoc.id,
+        ...(categoryDoc.data() as Category),
+      };
 
       const meseriasRef = data.meserias as DocumentReference<User>;
       const meseriasDoc = await getDoc(meseriasRef);
       const meserias = { id: meseriasDoc.id, ...(meseriasDoc.data() as User) };
-      // const meserias = meseriasDoc.data() as User;
 
       const offer: Offer = {
         id,
@@ -108,7 +116,10 @@ export class OffersRepository {
 
       const categoryRef = data.category as DocumentReference<Category>;
       const categoryDoc = await getDoc(categoryRef);
-      const category = { id: categoryDoc.id, ...(categoryDoc.data() as Category) };
+      const category = {
+        id: categoryDoc.id,
+        ...(categoryDoc.data() as Category),
+      };
       // const category = categoryDoc.data() as Category;
 
       const offer: Offer = {
@@ -154,7 +165,7 @@ export class OffersRepository {
       meserias: meseriasRef,
       category: categoryRef,
       ...rest,
-    }
+    };
 
     await addDoc(this.offersCollection, newOffer).catch((error) => {
       this.log("Error adding document: ", error);
@@ -162,6 +173,70 @@ export class OffersRepository {
     });
 
     return;
+  }
+
+  public async updateOffer(offer: OfferRequest): Promise<void> {
+    const offerRef = doc(this.offersCollection, offer.id);
+    const offerDoc = await getDoc(offerRef).catch((error) => {
+      this.log("Error getting documents: ", error);
+      throw new Error("Couldn't get offer!");
+    });
+
+    if (!offerDoc.exists()) {
+      this.log("Offer not found!");
+      throw new Error("Offer not found!");
+    }
+
+    const { id, meserias_id, category_id, ...rest } = offer;
+
+    const meseriasRef = doc(this.usersCollection, meserias_id);
+    const meseriasDoc = await getDoc(meseriasRef).catch((error) => {
+      this.log("Error getting documents: ", error);
+      throw new Error("Couldn't get meserias!");
+    });
+
+    if (!meseriasDoc.exists()) {
+      this.log("Meserias not found!");
+      throw new Error("Meserias not found!");
+    }
+
+    const categoryRef = doc(collection(db, "categories"), category_id);
+    const categoryDoc = await getDoc(categoryRef).catch((error) => {
+      this.log("Error getting documents: ", error);
+      throw new Error("Couldn't get category!");
+    });
+
+    if (!categoryDoc.exists()) {
+      this.log("Category not found!");
+      throw new Error("Category not found!");
+    }
+
+    await updateDoc(offerRef, {
+      meserias: meseriasRef,
+      category: categoryRef,
+      ...rest,
+    }).catch((error) => {
+      this.log("Error updating document: ", error);
+      throw new Error("Couldn't update offer!");
+    });
+  }
+
+  public async deleteOffer(offerId: string): Promise<void> {
+    const offerRef = doc(this.offersCollection, offerId);
+    const offerDoc = await getDoc(offerRef).catch((error) => {
+      this.log("Error getting documents: ", error);
+      throw new Error("Couldn't get offer!");
+    });
+
+    if (!offerDoc.exists()) {
+      this.log("Offer not found!");
+      throw new Error("Offer not found!");
+    }
+
+    await deleteDoc(offerRef).catch((error) => {
+      this.log("Error deleting document: ", error);
+      throw new Error("Couldn't delete offer!");
+    });
   }
 
   public async getOffersByCategoryName(categoryName: string): Promise<Offer[]> {
@@ -183,7 +258,7 @@ export class OffersRepository {
         throw new Error("Category not found!");
       }
 
-      // Get the Firestore reference to the category 
+      // Get the Firestore reference to the category
       const categoryRef = doc(collection(db, "categories"), category.id);
       // Step 2: Query offers that reference the category
       const offersQuery = query(
@@ -219,8 +294,11 @@ export class OffersRepository {
         }
 
         // Construct the meserias object with proper typing
-        const meserias = { id: meseriasDoc.id, ...(meseriasDoc.data() as User) };
-        
+        const meserias = {
+          id: meseriasDoc.id,
+          ...(meseriasDoc.data() as User),
+        };
+
         const offer: Offer = {
           id,
           meserias,

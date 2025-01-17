@@ -12,6 +12,7 @@ interface User {
   last_name: string;
   phone_number: string;
   address: string;
+  county: string;
   date: string;
   version: number;
 }
@@ -47,6 +48,11 @@ interface RegisterResponse {
   user: User;
 }
 
+interface OfferFilters {
+  county?: string;
+  category_name?: string;
+}
+
 class ApiService {
   private token: string | null = null;
   private allOffers: Offer[] = [];
@@ -69,7 +75,6 @@ class ApiService {
     } catch (error) {
       console.error("Failed to load token from storage:", error);
     }
-    
   }
 
   async clearTokenFromStorage(): Promise<void> {
@@ -102,10 +107,8 @@ class ApiService {
    * Login user
    */
   async login(username: string, password: string): Promise<User> {
-    const response: AxiosResponse<{ token: string; user: User }> = await axios.post(
-      `${BASE_URL}/auth/login`,
-      { username, password }
-    );
+    const response: AxiosResponse<{ token: string; user: User }> =
+      await axios.post(`${BASE_URL}/auth/login`, { username, password });
 
     this.setToken(response.data.token);
 
@@ -162,7 +165,11 @@ class ApiService {
   /**
    * Update the user's password
    */
-  async updateUserPassword(userId: string, oldPassword: string, newPassword: string): Promise<string> {
+  async updateUserPassword(
+    userId: string,
+    oldPassword: string,
+    newPassword: string
+  ): Promise<string> {
     if (!this.token) {
       throw new Error("User is not logged in.");
     }
@@ -184,7 +191,6 @@ class ApiService {
       throw new Error("Could not change password! Please try again later.");
     }
   }
-
 
   /**
    * Get user by ID
@@ -210,46 +216,44 @@ class ApiService {
       }
     );
     return response.data.offers;
-  } 
-
+  }
 
   async getOffers(): Promise<Offer[]> {
     if (this.allOffers.length === 0) {
-    const response: AxiosResponse<{ offers: Offer[] }> = await axios.get(
-      `${BASE_URL}/offers`,
-      {
-        headers: { Authorization: `Bearer ${this.token}` },
-      }
+      const response: AxiosResponse<{ offers: Offer[] }> = await axios.get(
+        `${BASE_URL}/offers`,
+        {
+          headers: { Authorization: `Bearer ${this.token}` },
+        }
       );
       this.allOffers = response.data.offers;
       return response.data.offers;
-      }
-    else{
+    } else {
       console.log("Loading memorised offers");
       return this.allOffers;
     }
   }
-
 
   /**
    * Get offers for a specific categoty
    */
   async getOffersByCategory(category: string): Promise<Offer[]> {
     try {
-      const response: AxiosResponse<{ offers?: Offer[]; message?: string }> = await axios.get(
-        `${BASE_URL}/offers/category/${category}`,
-        {
+      const response: AxiosResponse<{ offers?: Offer[]; message?: string }> =
+        await axios.get(`${BASE_URL}/offers/category/${category}`, {
           headers: { Authorization: `Bearer ${this.token}` },
-        }
-      );
-  
+        });
+
       // Verificăm dacă răspunsul conține un array de oferte
       if (Array.isArray(response.data.offers)) {
         return response.data.offers;
       }
-  
+
       // Dacă răspunsul conține un mesaj, îl putem loga sau trata
-      console.warn("API returned a message:", response.data.message || "Unknown issue");
+      console.warn(
+        "API returned a message:",
+        response.data.message || "Unknown issue"
+      );
       return []; // Returnăm o listă goală dacă nu sunt oferte
     } catch (error) {
       console.error("Error fetching offers by category:", error);
@@ -288,6 +292,11 @@ class ApiService {
     }
   }
 
+  async updateOffer(offer: OfferRequest): Promise<void> {
+    try {
+      const response: AxiosResponse<{ offer: OfferRequest }> = await axios.put(
+        `${BASE_URL}/offers`,
+        offer,
   /**
  * Get the average review score for a specific user.
  * @param userId The ID of the user for whom the average review score is to be fetched.
@@ -301,6 +310,45 @@ class ApiService {
           headers: { Authorization: `Bearer ${this.token}` },
         }
       );
+    } catch (error) {
+      console.error("Error updating offer:", error);
+      throw new Error("Couldn't update offer!");
+    }
+  }
+
+  async deleteOffer(offer_id: string): Promise<void> {
+    try {
+      await axios.delete(
+        `${BASE_URL}/offers`,
+        { offer_id: offer_id },
+        {
+          headers: { Authorization: `Bearer ${this.token}` },
+        }
+      );
+    } catch (error) {
+      console.error("Error deleting offer:", error);
+      throw new Error("Couldn't delete offer!");
+    }
+  }
+
+  async filterOffers(filters: OfferFilters): Promise<Offer[]> {
+    const queryString = `?${filters.county ? `county=${filters.county}` : ""}${
+      filters.county ? "&" : ""
+    }${filters.category_name ? `category_name=${filters.category_name}` : ""}`;
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/offers/filter${queryString}`,
+        {
+          headers: { Authorization: `Bearer ${this.token}` },
+        }
+      );
+
+      return response.offers;
+    } catch (error) {
+      console.error("Error filtering offers:", error);
+      throw new Error("Couldn't filter offers!");
+    }
+  }
       console.log(response)
       return response.data.averageReview;
     } catch (error) {
@@ -340,7 +388,6 @@ class ApiService {
     throw new Error("Could not submit review! Please try again later.");
   }
   }
-
 }
 
 

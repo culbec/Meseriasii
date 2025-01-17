@@ -25,6 +25,7 @@ export interface User {
   last_name: string;
   phone_number: string;
   address: string;
+  county: string;
   date: string;
   version: number;
 }
