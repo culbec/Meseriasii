@@ -1,5 +1,10 @@
 import { User, UserRepository } from "../repository/userRepository";
-import { OfferRequest, OffersRepository } from "../repository/offersRepository";
+import {
+  Offer,
+  OfferFilters,
+  OfferRequest,
+  OffersRepository,
+} from "../repository/offersRepository";
 import { CategoryRepository } from "../repository/categoryRepository";
 import { getLogger } from "../utils/utils";
 import AuthManager from "../auth/authManager";
@@ -94,16 +99,13 @@ export default class Service {
     return this.loggedInUsers.has(token);
   }
 
-  public async getOffers(meserias_id?: string ,categoryName?:string) {
+  public async getOffers(meserias_id?: string, categoryName?: string) {
     try {
       if (meserias_id) {
         return this.offersRepo.getMeseriasOffers(meserias_id);
-
-      }
-      else if(categoryName){
+      } else if (categoryName) {
         return this.offersRepo.getOffersByCategoryName(categoryName);
-      }
-       else {
+      } else {
         return this.offersRepo.getOffers();
       }
     } catch (error) {
@@ -111,7 +113,6 @@ export default class Service {
       throw new Error("Couldn't get offers!");
     }
   }
-
 
   public async getUserById(userId: string) {
     try {
@@ -156,6 +157,11 @@ export default class Service {
       throw new Error("Couldn't change password!");
     }
   }
+
+  /**
+   * Adds an offer to the OffersRepository instance
+   * @param offer The offer to be addded
+   */
   public async addOffer(offer: OfferRequest) {
     try {
       await this.offersRepo.addOffer(offer);
@@ -164,6 +170,51 @@ export default class Service {
       throw new Error("Couldn't add offer!");
     }
   }
+
+  /**
+   * Updates an offer in the OffersRepository instance
+   * @param offer The offer to be updated
+   */
+  public async updateOffer(offer: OfferRequest) {
+    try {
+      await this.offersRepo.updateOffer(offer);
+    } catch (error) {
+      this.log("Error updating offer", error);
+      throw new Error("Couldn't update offer!");
+    }
+  }
+
+  /**
+   * Deletes an offer from the OffersRepository instance
+   * @param offerId The id of the offer to be deleted
+   */
+  public async deleteOffer(offerId: string) {
+    try {
+      await this.offersRepo.deleteOffer(offerId);
+    } catch (error) {
+      this.log("Error deleting offer", error);
+      throw new Error("Couldn't delete offer!");
+    }
+  }
+
+  /**
+   * Returns offers with some filters applied
+   * @param filters The filters to apply to the offers
+   */
+  public async filterOffers(filters: OfferFilters): Promise<Offer[]> {
+    try {
+      return (await this.offersRepo.getOffers()).filter((offer) => {
+        return (
+          (!filters.county || filters.county === offer.meserias.county) &&
+  (!filters.category_name || filters.category_name === offer.category.Name)
+        );
+      });
+    } catch (error) {
+      this.log("Error filtering offers", error);
+      throw new Error("Couldn't filter offers!");
+    }
+  }
+
   /**
    * Gets the categories from the CategoryRepository instance
    * @returns The categories if the operation was successful, an empty array otherwise

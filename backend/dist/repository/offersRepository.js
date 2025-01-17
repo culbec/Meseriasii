@@ -114,6 +114,55 @@ class OffersRepository {
         });
         return;
     }
+    async updateOffer(offer) {
+        const offerRef = (0, firestore_1.doc)(this.offersCollection, offer.id);
+        const offerDoc = await (0, firestore_1.getDoc)(offerRef).catch((error) => {
+            this.log("Error getting documents: ", error);
+            throw new Error("Couldn't get offer!");
+        });
+        if (!offerDoc.exists()) {
+            this.log("Offer not found!");
+            throw new Error("Offer not found!");
+        }
+        const { id, meserias_id, category_id } = offer, rest = __rest(offer, ["id", "meserias_id", "category_id"]);
+        const meseriasRef = (0, firestore_1.doc)(this.usersCollection, meserias_id);
+        const meseriasDoc = await (0, firestore_1.getDoc)(meseriasRef).catch((error) => {
+            this.log("Error getting documents: ", error);
+            throw new Error("Couldn't get meserias!");
+        });
+        if (!meseriasDoc.exists()) {
+            this.log("Meserias not found!");
+            throw new Error("Meserias not found!");
+        }
+        const categoryRef = (0, firestore_1.doc)((0, firestore_1.collection)(firebaseConfig_1.db, "categories"), category_id);
+        const categoryDoc = await (0, firestore_1.getDoc)(categoryRef).catch((error) => {
+            this.log("Error getting documents: ", error);
+            throw new Error("Couldn't get category!");
+        });
+        if (!categoryDoc.exists()) {
+            this.log("Category not found!");
+            throw new Error("Category not found!");
+        }
+        await (0, firestore_1.updateDoc)(offerRef, Object.assign({ meserias: meseriasRef, category: categoryRef }, rest)).catch((error) => {
+            this.log("Error updating document: ", error);
+            throw new Error("Couldn't update offer!");
+        });
+    }
+    async deleteOffer(offerId) {
+        const offerRef = (0, firestore_1.doc)(this.offersCollection, offerId);
+        const offerDoc = await (0, firestore_1.getDoc)(offerRef).catch((error) => {
+            this.log("Error getting documents: ", error);
+            throw new Error("Couldn't get offer!");
+        });
+        if (!offerDoc.exists()) {
+            this.log("Offer not found!");
+            throw new Error("Offer not found!");
+        }
+        await (0, firestore_1.deleteDoc)(offerRef).catch((error) => {
+            this.log("Error deleting document: ", error);
+            throw new Error("Couldn't delete offer!");
+        });
+    }
     async getOffersByCategoryName(categoryName) {
         try {
             // Step 1: Use CategoryRepository to get all categories
@@ -129,7 +178,7 @@ class OffersRepository {
                 this.log(`Category with name "${categoryName}" not found!`);
                 throw new Error("Category not found!");
             }
-            // Get the Firestore reference to the category 
+            // Get the Firestore reference to the category
             const categoryRef = (0, firestore_1.doc)((0, firestore_1.collection)(firebaseConfig_1.db, "categories"), category.id);
             // Step 2: Query offers that reference the category
             const offersQuery = (0, firestore_1.query)(this.offersCollection, (0, firestore_1.where)("category", "==", categoryRef));

@@ -114,7 +114,7 @@ async function startServer() {
     });
     log("Setup get user by id route\n");
     log("Setting up update user route");
-    router.post("/users/update", authMiddleware, async (ctx) => {
+    router.put("/users", authMiddleware, async (ctx) => {
         const body = await co_body_1.default.json(ctx);
         const user = body;
         if (typeof user !== "object") {
@@ -199,6 +199,65 @@ async function startServer() {
         }
     });
     log("Setup add offer route\n");
+    log("Setting up update offer route");
+    router.put("/offers", authMiddleware, async (ctx) => {
+        const body = await co_body_1.default.json(ctx);
+        const offer = body;
+        if (typeof offer !== "object") {
+            ctx.status = 400;
+            ctx.body = { message: "Invalid request" };
+            return;
+        }
+        try {
+            await service.updateOffer(offer);
+            ctx.status = 200;
+            ctx.body = { message: "Offer updated" };
+        }
+        catch (error) {
+            log("Error updating offfer", error);
+            ctx.status = 400;
+            ctx.body = { message: "Could not update offer! Please try again later." };
+        }
+    });
+    log("Setup update offer route\n");
+    log("Setting up delete offer route");
+    router.delete("/offers", authMiddleware, async (ctx) => {
+        const body = await co_body_1.default.json(ctx);
+        const { offer_id } = body;
+        if (typeof offer_id !== "string") {
+            ctx.status = 400;
+            ctx.body = { message: "Invalid request" };
+            return;
+        }
+        try {
+            await service.deleteOffer(offer_id);
+            ctx.status = 200;
+            ctx.body = { message: "Offer deleted" };
+        }
+        catch (error) {
+            log("Error deleting offer", error);
+            ctx.status = 400;
+            ctx.body = { message: "Could not delete offer! Please try again later." };
+        }
+    });
+    log("Setup delete offer route\n");
+    log("Setting up offer filtering route");
+    router.get("/offers/filter", authMiddleware, async (ctx) => {
+        const filters = ctx.query;
+        log(`Filtering by ${filters.county} and ${filters.category_name}...`);
+        try {
+            const filteredOffers = await service.filterOffers(filters);
+            log(`Found ${filteredOffers.length} offers!`);
+            ctx.status = 200;
+            ctx.body = { offers: filteredOffers };
+        }
+        catch (error) {
+            log("Error while filtering offers:", error);
+            ctx.status = 400;
+            ctx.body = { message: "Could not filter offers! Please try again later." };
+        }
+    });
+    log("Setup filtering offers route\n");
     log("Setting up categories route");
     router.get("/categories", async (ctx) => {
         const categories = await service.getCategories();
@@ -213,75 +272,6 @@ async function startServer() {
         ctx.status = 200;
         ctx.body = { categories };
     });
-  
-    log("Setup categories route\n");
-    router.get("/reviews", async (ctx) => {
-        log("GET /reviews called"); // Add this log
-        try {
-            const reviews = await service.getReviews();
-            log("reviews", reviews);
-            if (!reviews || reviews.length === 0) {
-                ctx.status = 404;
-                ctx.body = { message: "No reviews found!" };
-                return;
-            }
-            ctx.status = 200;
-            ctx.body = { reviews };
-        }
-        catch (error) {
-            log("Error fetching reviews:", error);
-            ctx.status = 500;
-            ctx.body = { message: "Could not fetch reviews! Please try again later." };
-        }
-    });
-    router.get("/reviews/stars/:starCount", async (ctx) => {
-        const { starCount } = ctx.params;
-        if (!starCount || isNaN(Number(starCount)) || Number(starCount) < 1 || Number(starCount) > 5) {
-            ctx.status = 400;
-            ctx.body = { message: "Star count must be between 1 and 5." };
-            return;
-        }
-        try {
-            const reviews = await service.getReviewsByStarCount(Number(starCount));
-            log(`reviews with ${starCount} stars`, reviews);
-            if (!reviews || reviews.length === 0) {
-                ctx.status = 404;
-                ctx.body = { message: `No reviews found with ${starCount} stars.` };
-                return;
-            }
-            ctx.status = 200;
-            ctx.body = { reviews };
-        }
-        catch (error) {
-            log("Error fetching reviews by star count:", error);
-            ctx.status = 500;
-            ctx.body = { message: "Could not fetch reviews! Please try again later." };
-        }
-    });
-    // Add a review
-    router.post("/reviews", async (ctx) => {
-        const body = await co_body_1.default.json(ctx);
-        const { meserias, stars, text, user } = body;
-        if (!meserias || !user || typeof stars !== "number" || !text) {
-            ctx.status = 400;
-            ctx.body = { message: "Invalid request. All fields are required." };
-            return;
-        }
-        try {
-            const review = { meserias, stars, text, user };
-            const reviewId = await service.addReview(review);
-            log("Added review with ID:", reviewId);
-            ctx.status = 201;
-            ctx.body = { message: "Review added successfully!", id: reviewId };
-        }
-        catch (error) {
-            log("Error adding review:", error);
-            ctx.status = 500;
-            ctx.body = { message: "Could not add the review! Please try again later." };
-        }
-    });
-    log("Setup review routes");
-  
     router.get("/offers/category/:categoryName", async (ctx) => {
         const { categoryName } = ctx.params; // Extract the category name from the route parameters
         log(`Fetching offers for category: ${categoryName}`);
@@ -321,7 +311,81 @@ async function startServer() {
             ctx.body = { message: "Could not fetch offers! Please try again later." };
         }
     });
-  
+    router.get("/reviews", async (ctx) => {
+        log("GET /reviews called"); // Add this log
+        try {
+            const reviews = await service.getReviews();
+            log("reviews", reviews);
+            if (!reviews || reviews.length === 0) {
+                ctx.status = 404;
+                ctx.body = { message: "No reviews found!" };
+                return;
+            }
+            ctx.status = 200;
+            ctx.body = { reviews };
+        }
+        catch (error) {
+            log("Error fetching reviews:", error);
+            ctx.status = 500;
+            ctx.body = {
+                message: "Could not fetch reviews! Please try again later.",
+            };
+        }
+    });
+    router.get("/reviews/stars/:starCount", async (ctx) => {
+        const { starCount } = ctx.params;
+        if (!starCount ||
+            isNaN(Number(starCount)) ||
+            Number(starCount) < 1 ||
+            Number(starCount) > 5) {
+            ctx.status = 400;
+            ctx.body = { message: "Star count must be between 1 and 5." };
+            return;
+        }
+        try {
+            const reviews = await service.getReviewsByStarCount(Number(starCount));
+            log(`reviews with ${starCount} stars`, reviews);
+            if (!reviews || reviews.length === 0) {
+                ctx.status = 404;
+                ctx.body = { message: `No reviews found with ${starCount} stars.` };
+                return;
+            }
+            ctx.status = 200;
+            ctx.body = { reviews };
+        }
+        catch (error) {
+            log("Error fetching reviews by star count:", error);
+            ctx.status = 500;
+            ctx.body = {
+                message: "Could not fetch reviews! Please try again later.",
+            };
+        }
+    });
+    // Add a review
+    router.post("/reviews", async (ctx) => {
+        const body = await co_body_1.default.json(ctx);
+        const { meserias, stars, text, user } = body;
+        if (!meserias || !user || typeof stars !== "number" || !text) {
+            ctx.status = 400;
+            ctx.body = { message: "Invalid request. All fields are required." };
+            return;
+        }
+        try {
+            const review = { meserias, stars, text, user };
+            const reviewId = await service.addReview(review);
+            log("Added review with ID:", reviewId);
+            ctx.status = 201;
+            ctx.body = { message: "Review added successfully!", id: reviewId };
+        }
+        catch (error) {
+            log("Error adding review:", error);
+            ctx.status = 500;
+            ctx.body = {
+                message: "Could not add the review! Please try again later.",
+            };
+        }
+    });
+    log("Setup review routes\n");
     app.use((0, koa_logger_1.default)());
     app.use((0, koa_json_1.default)());
     app.use(router.routes()).use(router.allowedMethods());

@@ -139,6 +139,10 @@ class Service {
             throw new Error("Couldn't change password!");
         }
     }
+    /**
+     * Adds an offer to the OffersRepository instance
+     * @param offer The offer to be addded
+     */
     async addOffer(offer) {
         try {
             await this.offersRepo.addOffer(offer);
@@ -146,6 +150,48 @@ class Service {
         catch (error) {
             this.log("Error adding offer", error);
             throw new Error("Couldn't add offer!");
+        }
+    }
+    /**
+     * Updates an offer in the OffersRepository instance
+     * @param offer The offer to be updated
+     */
+    async updateOffer(offer) {
+        try {
+            await this.offersRepo.updateOffer(offer);
+        }
+        catch (error) {
+            this.log("Error updating offer", error);
+            throw new Error("Couldn't update offer!");
+        }
+    }
+    /**
+     * Deletes an offer from the OffersRepository instance
+     * @param offerId The id of the offer to be deleted
+     */
+    async deleteOffer(offerId) {
+        try {
+            await this.offersRepo.deleteOffer(offerId);
+        }
+        catch (error) {
+            this.log("Error deleting offer", error);
+            throw new Error("Couldn't delete offer!");
+        }
+    }
+    /**
+     * Returns offers with some filters applied
+     * @param filters The filters to apply to the offers
+     */
+    async filterOffers(filters) {
+        try {
+            return (await this.offersRepo.getOffers()).filter((offer) => {
+                return ((!filters.county || filters.county === offer.meserias.county) &&
+                    (!filters.category_name || filters.category_name === offer.category.Name));
+            });
+        }
+        catch (error) {
+            this.log("Error filtering offers", error);
+            throw new Error("Couldn't filter offers!");
         }
     }
     /**
