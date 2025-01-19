@@ -142,7 +142,7 @@ useEffect(() => {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.outerContainer}
+    <ScrollView contentContainerStyle={[styles.outerContainer, , { flexGrow: 1 }]}
     indicatorStyle="black" // Culoare pentru bara de scroll
     showsVerticalScrollIndicator={true} // Arată bara de scroll verticală
     showsHorizontalScrollIndicator={false}>
@@ -325,12 +325,13 @@ useEffect(() => {
 
 const styles = StyleSheet.create({
   outerContainer: {
-    // backgroundColor: '#4a90e2',
-    backgroundColor: 'white',
+    backgroundColor: '#4a90e2',
+    // backgroundColor: 'white',
     padding: 10,
-    // flex: 1
+    // flex: 1,
   },
   innerContainer: {
+    flexGrow: 1,
     backgroundColor: 'white',
     borderRadius: 15,
     marginHorizontal: 10,
@@ -339,6 +340,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     // Nu mai folosim flex: 1, astfel încât să permite derularea
     paddingBottom: 20,  // Adăugăm un padding inferior pentru a preveni tăierea conținutului
+    // flex: 1,
   },  
   profileContainer: {
     flex: 1,
@@ -515,10 +517,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Roboto', // Schimbăm fontul
   },
   noOffersText: {
+    // flex: 1, // Ocupă întregul spațiu rămas
+    justifyContent: 'center', // Centrează pe verticală
+    alignItems: 'center', // Centrează pe orizontală
     textAlign: 'center',
     marginTop: 20,
     fontSize: 16,
     color: '#888',
+    // height: '100%',
   },
 });
 
