@@ -27,6 +27,7 @@ export interface User {
   address: string;
   date: string;
   version: number;
+  county: string;
 }
 
 interface UserPrivate extends User {

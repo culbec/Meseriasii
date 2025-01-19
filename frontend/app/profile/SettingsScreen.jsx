@@ -5,14 +5,15 @@ import ApiService from '../service/ApiService';
 
 const SettingsScreen = () => {
   const route = useRoute();
-  const { userData } = route.params;
+  const { user } = route.params;
 
   const navigation = useNavigation();
-
-  const [address, setAddress] = useState(userData.address);
-  const [firstName, setFirstName] = useState(userData.first_name);
-  const [lastName, setLastName] = useState(userData.last_name);
-  const [phoneNumber, setPhoneNumber] = useState(userData.phone_number);
+  
+  const [firstName, setFirstName] = useState(user.first_name);
+  const [address, setAddress] = useState(user.address);
+  const [lastName, setLastName] = useState(user.last_name);
+  const [phoneNumber, setPhoneNumber] = useState(user.phone_number);
+  const [county, setCounty] = useState(user.county);
 
   // State pentru modalul de schimbare a parolei
   const [modalVisible, setModalVisible] = useState(false);
@@ -35,16 +36,17 @@ const SettingsScreen = () => {
     }
 
     const updatedUser = {
-      id: userData.id, // Keep the user ID and other uneditable fields as they are
-      username: userData.username,
+      id: user.id, // Keep the user ID and other uneditable fields as they are
+      username: user.username,
       first_name: firstName,
       last_name: lastName,
       phone_number: phoneNumber,
       address: address,
-      date: userData.date, // Keep date as it is
-      password: userData.password, // Don't change the password field here
-      type: userData.type,
-      version: userData.version,
+      date: user.date, // Keep date as it is
+      password: user.password, // Don't change the password field here
+      type: user.type,
+      version: user.version,
+      county: user.county,
     };
 
     try {
@@ -69,14 +71,14 @@ const SettingsScreen = () => {
     }
 
     const updatedUser = {
-      ...userData,
+      ...user,
       password: newPassword, // Actualizează doar parola
     };
   
     // Call the API to update the password
     try {
       // Call the backend to change the password
-      const message = await ApiService.updateUserPassword(userData.id, oldPassword, newPassword);
+      const message = await ApiService.updateUserPassword(user.id, oldPassword, newPassword);
       setSuccessMessage(message); // Set success message
       setModalVisible(false); // Close the modal on success
       navigation.setParams({ user: updatedUser });
@@ -96,30 +98,45 @@ const SettingsScreen = () => {
     <View style={styles.container}>
       <Text style={styles.title}>Setări</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Nume"
-        value={firstName}
-        onChangeText={setFirstName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Prenume"
-        value={lastName}
-        onChangeText={setLastName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Adresă"
-        value={address}
-        onChangeText={setAddress}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Număr de telefon"
-        value={phoneNumber}
-        onChangeText={setPhoneNumber}
-      />
+      <Text style={styles.label}>Nume</Text>
+  <TextInput
+    style={styles.input}
+    placeholder="Nume"
+    value={firstName}
+    onChangeText={setFirstName}
+  />
+
+  <Text style={styles.label}>Prenume</Text>
+  <TextInput
+    style={styles.input}
+    placeholder="Prenume"
+    value={lastName}
+    onChangeText={setLastName}
+  />
+
+  <Text style={styles.label}>Oraș</Text>
+  <TextInput
+    style={styles.input}
+    placeholder="Oraș"
+    value={address}
+    onChangeText={setAddress}
+  />
+
+  <Text style={styles.label}>Județ</Text>
+  <TextInput
+    style={styles.input}
+    placeholder="Județ"
+    value={county}
+    onChangeText={setCounty}
+  />
+
+  <Text style={styles.label}>Număr de telefon</Text>
+  <TextInput
+    style={styles.input}
+    placeholder="Număr de telefon"
+    value={phoneNumber}
+    onChangeText={setPhoneNumber}
+  />
 
       <Button
         title="Schimbă parola"

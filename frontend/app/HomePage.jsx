@@ -3,15 +3,57 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 
 import { useNavigation } from '@react-navigation/native';
 import ApiService from './service/ApiService';
 import { useRoute } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Picker } from '@react-native-picker/picker';
 
 const HomePage = () => {
   const navigation = useNavigation();
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState();
+  const [selectedCounty, setSelectedCounty] = useState();
   const [categories, setCategories] = useState([]);
   const [offers, setOffers] = useState([]);
-
-  const route = useRoute();
-  const user = route.params.user;
+  const [user, setUser] = useState(null);
+  const [isAtBottom, setIsAtBottom] = useState(false);
+  
+    // Funcție care verifică dacă utilizatorul este la fundul paginii
+    const handleScroll = (event) => {
+      const contentHeight = event.nativeEvent.contentSize.height;
+      const contentOffsetY = event.nativeEvent.contentOffset.y;
+      const layoutHeight = event.nativeEvent.layoutMeasurement.height;
+  
+      // Verifică dacă utilizatorul este la fundul paginii
+      if (contentOffsetY + layoutHeight >= contentHeight - 20) {
+        setIsAtBottom(true);
+      } else {
+        setIsAtBottom(false);
+      }
+    };
+  // const route = useRoute();
+  // setUser(route.params.user);
+  const counties = [
+    "Alba", "Arad", "Arges", "Bacau", "Bihor", "Bistrita-Nasaud", "Botosani", 
+    "Brasov", "Braila", "Buzau", "Caras-Severin", "Calarasi", "Cluj", "Constanta", 
+    "Covasna", "Dambovita", "Dolj", "Galati", "Giurgiu", "Gorj", "Harghita", 
+    "Hunedoara", "Ialomita", "Iasi", "Ilfov", "Maramures", "Mehedinti", "Mures", 
+    "Neamt", "Olt", "Prahova", "Satu Mare", "Salaj", "Sibiu", "Suceava", 
+    "Teleorman", "Timis", "Tulcea", "Vaslui", "Valcea", "Vrancea", 
+    "Bucuresti"
+  ];
+  
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const savedUser = await AsyncStorage.getItem('user');
+        if (savedUser) {
+          setUser(JSON.parse(savedUser));
+        }
+      } catch (err) {
+        console.error('Error loading user data:', err);
+      }
+    };
+  
+    loadUser();
+  }, []);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -41,7 +83,8 @@ const HomePage = () => {
     const fetchOffersForCategory = async () => {
       if (selectedCategory) {
         try {
-          const offersData = await ApiService.getOffersByCategory(selectedCategory.Name);
+          const county = selectedCounty ? selectedCounty : "";
+          const offersData = await ApiService.filterOffers({county:county, category_name:selectedCategory.Name});
           setOffers(offersData);
         } catch (err) {
           console.error("Error fetching offers: ", err);
@@ -54,8 +97,37 @@ const HomePage = () => {
     fetchOffersForCategory();
   }, [selectedCategory]);
 
+  useEffect(() => {
+    const fetchOffersForCounty = async () => {
+      if (selectedCounty || selectedCategory) {
+        try {
+          const categoryName = selectedCategory ? selectedCategory.Name : "";
+          const offersData = await ApiService.filterOffers({county:selectedCounty, category_name:categoryName});
+          setOffers(offersData);
+        } catch (err) {
+          console.error("Error fetching offers: ", err);
+        }
+      } else {
+        const offersData = await ApiService.getOffers();
+        setOffers(offersData);
+      }
+    };
+    fetchOffersForCounty();
+  }, [selectedCounty]);
+
   const handleCategorySelect = (category) => {
     setSelectedCategory(selectedCategory === category ? null : category);
+  };
+
+  const handleCountySelect = (county) => {
+    setSelectedCounty(county);
+    console.log("Județ selectat:", county);
+  };
+
+  const handleOfferSelect = (offer) => {
+    ApiService.saveOffer(offer);
+    console.log("Oferta selectat:", offer);
+    navigation.navigate('OfferDetailScreen', { selectedOffer: offer })
   };
 
   const truncateText = (text, maxLength = 150) => {
@@ -63,7 +135,7 @@ const HomePage = () => {
   };
 
   return (
-      <ScrollView style={styles.container}>
+      <ScrollView style={styles.container} onScroll={handleScroll} scrollEventThrottle={16}>
         <View style={styles.header}>
           <Text style={styles.logo}>Meseriasii</Text>
           <TouchableOpacity
@@ -74,11 +146,23 @@ const HomePage = () => {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.searchSection}>
+        {/* <View style={styles.searchSection}>
           <Text style={styles.slogan}>Profesionisti la un click distanta</Text>
           <TextInput style={styles.searchBar} placeholder="Caută..." />
-        </View>
-
+        </View> */}
+        <View style={styles.dropdownContainer}>
+        <Text style={styles.sectionJudet}>Alege un judet:</Text>
+        <Picker
+        // selectedValue={selectedCounty}
+        onValueChange={(itemValue) => handleCountySelect(itemValue)}
+        style={styles.picker}
+        >
+        <Picker.Item label="" value={null} style = {styles.picker_item}/>
+        {counties.map((county, index) => (
+          <Picker.Item key={index} label={county} value={county} style = {styles.picker_item}/>
+        ))}
+      </Picker>
+      </View>
         <ScrollView horizontal style={styles.categorySection} showsHorizontalScrollIndicator={false}>
           {categories.map((category) => (
               <TouchableOpacity
@@ -97,7 +181,7 @@ const HomePage = () => {
               <TouchableOpacity
                   key={offer.id}
                   style={styles.meseriasCard}
-                  onPress={() => navigation.navigate('OfferDetailScreen', { selectedOffer: offer })}
+                  onPress={() =>handleOfferSelect(offer)}
               >
                 <Text style={styles.offerText}>
                   {truncateText(offer.description || 'Nicio descriere disponibilă')}
@@ -107,27 +191,45 @@ const HomePage = () => {
               </TouchableOpacity>
           ))}
         </View>
-
-        <View style={styles.footer}>
-          <Text style={styles.footerLogo}>Meseriasii</Text>
-          <View style={styles.contactInfo}>
-            <View style={styles.contactItem}>
-              <Text style={styles.contactLabel}>Email:</Text>
-              <Text style={styles.contactText}>nasii.meseriasii@gmail.com</Text>
-            </View>
-            <View style={styles.contactItem}>
-              <Text style={styles.contactLabel}>Telefon:</Text>
-              <Text style={styles.contactText}>+07 n am cartela</Text>
-            </View>
-          </View>
-          <Text style={styles.footerCopy}>&copy; 2024 Meseriasii. Toate drepturile rezervate.</Text>
-        </View>
       </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+  sectionJudet: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#4a90e2',
+    marginTop: 10,
+    padding: 8,
+  },
+
+  dropdownContainer: {
+    marginTop: -6,
+    marginBottom: 8,
+    flexDirection: 'row', // Aliniază textul și Picker-ul pe orizontală
+    alignItems: 'center', // Centrează vertical
+    justifyContent: 'flex-start'
+  },
+  dropdownLabel: {
+    fontSize: 16,
+    marginBottom: 8,
+    color: '#333',
+
+  },
+  picker: {
+    height: 50,
+    marginTop: 12,
+    backgroundColor: '#fff',
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 32,
+    width: '40%',
+    // padding: 8,
+  },
+  
   container: {
+    // padding: 16,//!!!
     flex: 1,
     backgroundColor: '#f7f9fc',
   },

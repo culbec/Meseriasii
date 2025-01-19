@@ -2,26 +2,28 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Linking, Alert, ScrollView } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import ApiService from './service/ApiService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const OfferDetailScreen = () => {
-  const route = useRoute();
   const navigation = useNavigation();  // Use navigation
   const [selectedOffer, setSelectedOffer] = useState(null);
 
   useEffect(() => {
-    const { selectedOffer } = route.params || {};
-    if (selectedOffer) {
-      setSelectedOffer(selectedOffer);
-      ApiService.setSelectedOffer(selectedOffer);
-    } else {
-      const offerFromService = ApiService.getSelectedOffer();
-      if (offerFromService) {
-        setSelectedOffer(offerFromService);
-      } else {
-        console.error("No selected offer available");
+    const loadOffer = async () => {
+      try {
+        const savedOffer = await AsyncStorage.getItem('offer');
+        console.log("Loaded Offer:", savedOffer);
+        if (savedOffer) {
+          setSelectedOffer(JSON.parse(savedOffer));
+        }
+      } catch (err) {
+        console.error('Error loading user data:', err);
       }
-    }
-  }, [route.params]);
+    };
+
+      loadOffer();
+      ApiService.loadTokenFromStorage();
+  }, []);
 
   const handleCallPress = () => {
     if (selectedOffer?.meserias?.phoneNumber) {
@@ -34,7 +36,8 @@ const OfferDetailScreen = () => {
   };
 
   const handleMeseriasProfilePress = () => {
-    user = selectedOffer.meserias;
+    const user = selectedOffer.meserias;
+    ApiService.saveProfile(user);
     navigation.navigate('profile/PublicProfileScreen', { user });
   };
 
@@ -65,9 +68,6 @@ const OfferDetailScreen = () => {
         </View>
 
         {/* Butonul de contact, fixat jos */}
-        <TouchableOpacity style={styles.chatButton} onPress={handleCallPress}>
-          <Text style={styles.buttonText}>Scrie mesaj</Text>
-        </TouchableOpacity>
         <TouchableOpacity style={styles.callButton} onPress={handleCallPress}>
           <Text style={styles.buttonText}>Contactează</Text>
         </TouchableOpacity>

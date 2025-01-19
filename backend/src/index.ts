@@ -9,8 +9,7 @@ import CoBody from "co-body";
 import Service from "./service/service";
 import { createAuthMiddleware } from "./auth/authMiddleware";
 import { getLogger } from "./utils/utils";
-import { OfferRequest } from "./repository/offersRepository";
-
+import { OfferFilters, OfferRequest } from "./repository/offersRepository";
 const app = new Application();
 app.use(cors());
 
@@ -139,7 +138,7 @@ async function startServer() {
   log("Setup get user by id route\n");
 
   log("Setting up update user route");
-  router.post("/users/update", authMiddleware, async (ctx) => {
+    router.put("/users", authMiddleware, async (ctx) => {
     const body = await CoBody.json(ctx);
     const user = body;
 
@@ -237,6 +236,77 @@ async function startServer() {
     }
   });
   log("Setup add offer route\n");
+
+  log("Setting up update offer route");
+  router.put("/offers", authMiddleware, async (ctx) => {
+    const body = await CoBody.json(ctx);
+    log("body", body);
+    const offer = body;
+
+    if (typeof offer !== "object") {
+      ctx.status = 400;
+      ctx.body = { message: "Invalid request" };
+      return;
+    }
+
+    try {
+      await service.updateOffer(offer as OfferRequest);
+
+      ctx.status = 200;
+      ctx.body = { message: "Offer updated" };
+    } catch (error) {
+      log("Error updating offfer", error);
+      ctx.status = 400;
+      ctx.body = { message: "Could not update offer! Please try again later." };
+    }
+  });
+  log("Setup update offer route\n");
+
+  log("Setting up delete offer route");
+  router.delete("/offers", authMiddleware, async (ctx) => {
+    const body = await CoBody.json(ctx);
+    const { offer_id } = body;
+
+    if (typeof offer_id !== "string") {
+      ctx.status = 400;
+      ctx.body = { message: "Invalid request" };
+      return;
+    }
+
+    try {
+      await service.deleteOffer(offer_id);
+
+      ctx.status = 200;
+      ctx.body = { message: "Offer deleted" };
+    } catch (error) {
+      log("Error deleting offer", error);
+      ctx.status = 400;
+      ctx.body = { message: "Could not delete offer! Please try again later." };
+    }
+  });
+  log("Setup delete offer route\n");
+
+  log("Setting up offer filtering route");
+  router.get("/offers/filter", authMiddleware, async (ctx) => {
+      const filters = ctx.query as OfferFilters;
+      log(`Filtering by ${filters.county} and ${filters.category_name}...`);
+
+      try {
+        const filteredOffers = await service.filterOffers(filters);
+        log(`Found ${filteredOffers.length} offers!`);
+
+        ctx.status = 200;
+        ctx.body = {offers: filteredOffers};
+
+      } catch (error) {
+        log("Error while filtering offers:", error);
+        ctx.status = 400;
+        ctx.body = {message: "Could not filter offers! Please try again later."}
+      }
+  });
+  log("Setup filtering offers route\n")
+
+
 
   log("Setting up categories route");
   router.get("/categories", async (ctx) => {

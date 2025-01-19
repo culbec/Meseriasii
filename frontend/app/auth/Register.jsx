@@ -11,10 +11,11 @@ const RegisterScreen = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [address, setAddress]  = useState('');
   const [password, setPassword] = useState('');
+  const [county, setCounty] = useState('');
   const navigation = useNavigation();
 
   const handleRegister = async () => {
-    if (!username || !firstName || !lastName || !phoneNumber || !address || !password) {
+    if (!username || !firstName || !lastName || !phoneNumber || !address || !password || !county) {
       Alert.alert('Eroare', 'Te rugăm să completezi toate câmpurile.');
 
       return;
@@ -28,6 +29,7 @@ const RegisterScreen = () => {
       phone_number: phoneNumber,
       address: address,
       date: new Date().toUTCString(),
+      county: county,
       version: 1
     };
 
@@ -89,7 +91,16 @@ const RegisterScreen = () => {
 
           <TextInput
               style={styles.input}
-              placeholder="Adresă"
+              placeholder="Judet"
+              placeholderTextColor="#888"
+              value={county}
+              onChangeText={setCounty}
+              autoCapitalize="words"
+          />
+
+          <TextInput
+              style={styles.input}
+              placeholder="Oras"
               placeholderTextColor="#888"
               value={address}
               onChangeText={setAddress}

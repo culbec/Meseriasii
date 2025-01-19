@@ -17,8 +17,8 @@ const LoginScreen = () => {
 
     try {
       const user = await ApiService.login(username, password);
+      await ApiService.saveUser(user);
       console.log("ApiService User:", user);
-
       navigation.navigate('HomePage', { user });
     } catch (error) {
       console.error("Eroare la autentificare:", error);

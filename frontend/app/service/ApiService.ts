@@ -14,6 +14,7 @@ interface User {
   address: string;
   date: string;
   version: number;
+  county: string;
 }
 
 interface Offer {
@@ -46,6 +47,12 @@ interface RegisterResponse {
   token: string;
   user: User;
 }
+
+interface OfferFilters {
+  county?: string;
+  category_name?: string;
+}
+
 
 class ApiService {
   private token: string | null = null;
@@ -90,22 +97,43 @@ class ApiService {
     console.log("Token saved to storage", token);
   }
 
-  setSelectedOffer(offer: Offer): void {
-    this.selectedOffer = offer;
-  }
+  async saveUser(user: User)  {
+    try {
+      await AsyncStorage.setItem('user', JSON.stringify(user));
+      console.log('User data saved:', user);
+    } catch (err) {
+      console.error('Error saving user data:', err);
+    }
+  };
 
-  getSelectedOffer(): Offer | null {
-    return this.selectedOffer;
-  }
+  async saveProfile(user: User)  {
+    try {
+      await AsyncStorage.setItem('user_profile', JSON.stringify(user));
+      console.log('User data saved:', user);
+    } catch (err) {
+      console.error('Error saving user data:', err);
+    }
+  };
+
+  async saveOffer(offer: Offer)  {
+    try {
+      await AsyncStorage.setItem('offer', JSON.stringify(offer));
+      console.log('Offer data saved:', offer);
+    } catch (err) {
+      console.error('Error saving user data:', err);
+    }
+  };
 
   /**
    * Login user
    */
   async login(username: string, password: string): Promise<User> {
-    const response: AxiosResponse<{ token: string; user: User }> = await axios.post(
-      `${BASE_URL}/auth/login`,
-      { username, password }
-    );
+    // const response: AxiosResponse<{ token: string; user: User }> = await axios.post(
+    //   `${BASE_URL}/auth/login`,
+    //   { username, password }
+    // );
+    const response: AxiosResponse<{ token: string; user: User }> =
+      await axios.post(`${BASE_URL}/auth/login`, { username, password });
 
     this.setToken(response.data.token);
 
@@ -147,9 +175,10 @@ class ApiService {
     if (!this.token) {
       throw new Error("User is not logged in.");
     }
+    this.saveUser(user);
 
-    const response: AxiosResponse<{ user: User }> = await axios.post(
-      `${BASE_URL}/users/update`,
+    const response: AxiosResponse<{ user: User }> = await axios.put(
+      `${BASE_URL}/users`,
       user, // Send the user data as request body
       {
         headers: { Authorization: `Bearer ${this.token}` }, // Include token in the headers for authentication
@@ -162,7 +191,11 @@ class ApiService {
   /**
    * Update the user's password
    */
-  async updateUserPassword(userId: string, oldPassword: string, newPassword: string): Promise<string> {
+   async updateUserPassword(
+    userId: string,
+    oldPassword: string,
+    newPassword: string
+    ): Promise<string> {
     if (!this.token) {
       throw new Error("User is not logged in.");
     }
@@ -214,48 +247,70 @@ class ApiService {
 
 
   async getOffers(): Promise<Offer[]> {
-    if (this.allOffers.length === 0) {
-    const response: AxiosResponse<{ offers: Offer[] }> = await axios.get(
-      `${BASE_URL}/offers`,
-      {
-        headers: { Authorization: `Bearer ${this.token}` },
-      }
-      );
-      this.allOffers = response.data.offers;
-      return response.data.offers;
-      }
-    else{
-      console.log("Loading memorised offers");
-      return this.allOffers;
-    }
-  }
-
-
-  /**
-   * Get offers for a specific categoty
-   */
-  async getOffersByCategory(category: string): Promise<Offer[]> {
-    try {
-      const response: AxiosResponse<{ offers?: Offer[]; message?: string }> = await axios.get(
-        `${BASE_URL}/offers/category/${category}`,
+      const response: AxiosResponse<{ offers: Offer[] }> = await axios.get(
+        `${BASE_URL}/offers`,
         {
           headers: { Authorization: `Bearer ${this.token}` },
         }
       );
-  
-      // Verificăm dacă răspunsul conține un array de oferte
-      if (Array.isArray(response.data.offers)) {
-        return response.data.offers;
-      }
-  
-      // Dacă răspunsul conține un mesaj, îl putem loga sau trata
-      console.warn("API returned a message:", response.data.message || "Unknown issue");
-      return []; // Returnăm o listă goală dacă nu sunt oferte
+      this.allOffers = response.data.offers;
+      return response.data.offers;
+
+  }
+
+  async updateOffer(offer: OfferRequest): Promise<void> {
+    console.log("Update offer:", offer);
+    try {
+      const response: AxiosResponse<{ offer: OfferRequest }> = await axios.put(
+        `${BASE_URL}/offers`,
+        offer,
+        {
+          headers: { Authorization: `Bearer ${this.token}` },
+        }
+      );
     } catch (error) {
-      console.error("Error fetching offers by category:", error);
-      return []; // Returnăm o listă goală în caz de eroare
+      console.error("Error updating offer:", error);
+      throw new Error("Couldn't update offer!");
     }
   }
+
+  async deleteOffer(offer_id: string): Promise<void> {
+    try {
+      await axios.delete(
+        `${BASE_URL}/offers`,
+        {
+          data : { offer_id: offer_id },
+          headers: { Authorization: `Bearer ${this.token}` },
+        }
+      );
+    } catch (error) {
+      console.error("Error deleting offer:", error);
+      throw new Error("Couldn't delete offer!");
+    }
+  }
+
+  async filterOffers(filters: OfferFilters): Promise<Offer[]> {
+    console.log(filters);
+    console.log("Token:", this.token);
+    const queryString = `?${filters.county ? `county=${filters.county}` : ""}${
+      filters.county ? "&" : ""
+    }${filters.category_name ? `category_name=${filters.category_name}` : ""}`;
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/offers/filter${queryString}`,
+        {
+          headers: { Authorization: `Bearer ${this.token}` },
+        }
+      );
+
+      return response.data.offers;
+    } catch (error) {
+      console.error("Error filtering offers:", error);
+      throw new Error("Couldn't filter offers!");
+    }
+  }
+  
+
 
   /**
    * Get categories
